@@ -22,7 +22,7 @@ export default function Home() {
 
     const canvas = await html2canvas(elem, {
       scale: 2, // 🔥 improves quality
-      useCORS: true
+      useCORS: true,
     });
 
     const imgData = canvas.toDataURL("image/jpeg");
@@ -51,9 +51,14 @@ export default function Home() {
     // cc.href = url;
     // cc.download = "true";
     // cc.click();
-  }
+  };
 
   return (
-    
+    <main className="bg-white">
+      <h1 className="h-10 text-center text-xl">Select a template</h1>
+      <div className="flex items-center">
+
+      </div>
+    </main>
   );
 }
