@@ -5,6 +5,13 @@
   --font-mono: var(--font-geist-mono);
 }
 
+.mtoo td {
+  border: 1px solid #000;
+}
+.mtoo th {
+  border: 1px solid #000;
+}
+
 body {
   font-family: Arial, Helvetica, sans-serif;
 }
