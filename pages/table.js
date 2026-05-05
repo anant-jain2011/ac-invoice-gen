@@ -4,6 +4,7 @@ import {
   ComboboxInput,
   ComboboxOption,
   ComboboxOptions,
+  Switch,
 } from "@headlessui/react";
 import clsx from "clsx";
 import { useEffect, useState } from "react";
@@ -13,8 +14,10 @@ import {
   MinusCircleIcon,
   PlusCircleIcon,
 } from "@heroicons/react/20/solid";
+import { useRouter } from "next/router";
 
 const gsts = ["05AAACI5950L1ZG", "24AAACI5950L1ZG"];
+
 let types = {
   type1: [
     <th>SR NO.</th>,
@@ -42,7 +45,35 @@ let types = {
     <th>FREIGHT AMOUNT</th>,
     <th>TOTAL AMOUNT</th>,
   ],
+  type3: [
+    <th>SR NO.</th>,
+    <th>CN DATA</th>,
+    <th>CN NO.</th>,
+    <th>FROM</th>,
+    <th>DESTINATION</th>,
+    <th>HSN/SAC CODE</th>,
+    <th>TRANSPORT</th>,
+    <th>INVOICE NO.</th>,
+    <th>MATERIAL DESCRIPTION</th>,
+    <th>VEHICLE NO.</th>,
+    <th>NO. OF PKG</th>,
+    <th>WEIGHT</th>,
+    <th>RATE PER KG</th>,
+    <th>FREIGHT AMOUNT</th>,
+    <th>TOTAL AMOUNT</th>,
+  ],
 };
+
+function Input(props) {
+  return (
+    <textarea
+      className="w-full h-full [&::-webkit-scrollbar]:hidden resize-none overflow-hidden border border-gray-800 py-2 px-3 text-sm focus:outline-none"
+      spellCheck={false}
+      onChange={(e) => props.tululu(props.Key, e.target.value, props.idx)}
+      {...props}
+    />
+  );
+}
 
 // ✅ Separate component (clean approach)
 function InputBox({ items }) {
@@ -66,7 +97,6 @@ function InputBox({ items }) {
   return (
     <Combobox value={selected} onChange={setSelected}>
       <div className="relative flex-1">
-        {/* Input */}
         <ComboboxInput
           className="w-full rounded-lg border-gray-300 bg-white py-2 pr-8 pl-3 text-sm focus:outline-none"
           displayValue={(item) => item}
@@ -111,19 +141,42 @@ function InputBox({ items }) {
   );
 }
 
-function Input(...props) {
-  return (
-    <input
-      className="w-full border-gray-300 bg-white py-2 pr-8 pl-3 text-sm focus:outline-none"
-      spellCheck={false}
-      onChange={(e) => setQuery(e.target.value)}
-      {...props}
-    />
-  );
-}
-
 const Table = () => {
-  const [voiceData, setVoiceData] = useState([{}]);
+  const router = useRouter();
+  const [head, setHead] = useState([]);
+  const [igst, setIgst] = useState(false);
+  const [template, setTemplate] = useState({});
+  const [voiceData, setVoiceData] = useState([template]);
+
+  function tululu(key, val, i) {
+    setVoiceData((prevData) => {
+      const newData = [...prevData];
+      newData[i] = { ...newData[i], [key]: val };
+      return newData;
+    });
+  }
+
+  useEffect(() => {
+    let { type } = router.query;
+
+    if (type) {
+      setHead(types[type]);
+
+      let temp = types[type].reduce((acc, tag) => {
+        const key = tag.props.children
+          .replace(/<\/?[^>]+(>|$)/g, "")
+          .replace(/[^a-zA-Z0-9]+/g, "_")
+          .replace(/^_+|_+$/g, "")
+          .toLowerCase();
+
+        acc[key] = "";
+        return acc;
+      }, {});
+
+      setVoiceData([{ ...temp }]);
+      setTemplate(temp);
+    }
+  }, [router.query]);
 
   return (
     <main className="text-black min-h-screen w-full flex flex-col justify-center">
@@ -158,6 +211,7 @@ const Table = () => {
             </tr>
           </tbody>
         </table>
+
         <table className="border w-1/4">
           <thead className="border">
             <tr>
@@ -193,9 +247,11 @@ const Table = () => {
                 <b>RCM - </b> NO{" "}
               </td>
             </tr>
-            <td className="px-4">
-              <b>STATE - </b> UTTARAKHAND{" "}
-            </td>
+            <tr>
+              <td className="px-4">
+                <b>STATE - </b> UTTARAKHAND{" "}
+              </td>
+            </tr>
             <tr>
               <td className="px-4">
                 <b>STATE CODE - </b> 05{" "}
@@ -205,55 +261,30 @@ const Table = () => {
         </table>
       </div>
 
-      <table
-        className="text-xs w-[90%] mx-auto border border-collapse text-center px-1/6 mtoo mb-20 relative"
-        border={1}
-      >
-        <thead className="border">
-          <tr className="border">{}</tr>
-        </thead>
-        <tbody>
-          {voiceData.map((r, i) => (
-            <tr key={i}>
-              <td>{i + 1}</td>
-              <td>
-                <Input />
-              </td>
-              <td>
-                <Input />
-              </td>
-              <td>
-                <Input />
-              </td>
-              <td>
-                <Input />
-              </td>
-              <td>
-                <Input />
-              </td>
-              <td>
-                <Input />
-              </td>
-              <td>
-                <Input />
-              </td>
-              <td>
-                <Input />
-              </td>
-              <td>
-                <Input />
-              </td>
-              <td>
-                <Input />
-              </td>
-              <td>
-                <Input />
-              </td>
-              <td>
-                <Input />
-              </td>
-              <td>
-                TOTAL AMOUNT
+      {template && (
+        <table
+          className="text-xs w-[90%] mx-auto border border-collapse text-center px-1/6 mtoo mb-20 relative"
+          border={1}
+        >
+          <thead className="border">
+            <tr className="border">{}</tr>
+          </thead>
+          <tbody>
+            <tr>{...head}</tr>
+            {voiceData.map((r, i) => (
+              <>
+                <tr key={i}>
+                  {Object.keys(voiceData[i]).map((o, j) => (
+                    <td key={j}>
+                      <Input
+                        value={voiceData[i][o]}
+                        idx={i}
+                        Key={o}
+                        {...{ tululu }}
+                      />
+                    </td>
+                  ))}
+                </tr>
                 {i != voiceData.length - 1 ? (
                   <button
                     className="absolute p-1 rounded-full bg-red-500 text-white ml-3 -mt-3 cursor-pointer"
@@ -267,42 +298,67 @@ const Table = () => {
                 ) : (
                   ""
                 )}
+              </>
+            ))}
+            <tr>
+              <td colSpan={4} rowSpan={igst ? 4 : 5}>
+                <span className="flex justify-start items-end text-xs">
+                  <span className="flex justify-start items-end text-xs">
+                    ENCL - AS ABOVE
+                  </span>
+                </span>
               </td>
             </tr>
-          ))}
-          <tr>
-            <td colSpan={4} rowSpan={4}>
-              <span className="flex justify-start items-end text-xs">
-                <span className="flex justify-start items-end text-xs">
-                  ENCL - AS ABOVE
-                </span>
-              </span>
-            </td>
-          </tr>
-          <tr className="">
-            <th colSpan={9}>TAXABLE VALUE</th>
-            <td>
-              {4 * 5}
-              <button
-                className="absolute p-1 rounded-full bg-blue-500 text-white ml-8 -mt-8"
-                onClick={function () {
-                  setVoiceData([...voiceData, {}]);
-                }}
-              >
-                <PlusCircleIcon className="text-white w-6 h-6" />
-              </button>
-            </td>
-          </tr>
-          <tr className="">
-            <th colSpan={9}>IGST 18%</th>
-            <td>{4 * 5}</td>
-          </tr>
-          <tr className="">
-            <th colSpan={9}>GRAND TOTAL</th>
-            <td>{4 * 5}</td>
-          </tr>
-        </tbody>
-      </table>
+            <tr className="">
+              <th colSpan={head.length - 5}>TAXABLE VALUE</th>
+              <td>
+                {4 * 5}
+                <button
+                  className="absolute p-1 rounded-full bg-blue-500 text-white ml-8 -mt-8"
+                  onClick={function () {
+                    setVoiceData([...voiceData, template]);
+                  }}
+                >
+                  <PlusCircleIcon className="text-white w-6 h-6" />
+                </button>
+              </td>
+            </tr>
+            {!igst ? (
+              <>
+                <tr className="">
+                  <th colSpan={head.length - 5}>CGST 9%</th>
+                  <td>{4 * 5}</td>
+                </tr>
+                <tr className="">
+                  <th colSpan={head.length - 5}>SGST 9%</th>
+                  <td>{4 * 5}</td>
+                </tr>
+              </>
+            ) : (
+              <tr className="">
+                <th colSpan={head.length - 5}>IGST 18%</th>
+                <td>{4 * 5}</td>
+              </tr>
+            )}
+
+            <tr className="">
+              <th colSpan={head.length - 5}>GRAND TOTAL</th>
+              <td>{4 * 5}</td>
+            </tr>
+          </tbody>
+        </table>
+      )}
+
+      <Switch
+        checked={igst}
+        onChange={setIgst}
+        className="group relative flex h-7 w-14 cursor-pointer rounded-full bg-black/10 p-1 ease-in-out focus:not-data-focus:outline-none data-checked:bg-black/10 data-focus:outline data-focus:outline-bg-black"
+      >
+        <span
+          aria-hidden="true"
+          className="pointer-events-none inline-block size-5 translate-x-0 rounded-full bg-black shadow-lg ring-0 transition duration-200 ease-in-out group-data-checked:translate-x-7"
+        />
+      </Switch>
     </main>
   );
 };
