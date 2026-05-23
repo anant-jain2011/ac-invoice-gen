@@ -1,5 +1,9 @@
-// Next.js API route support: https://nextjs.org/docs/api-routes/introduction
+import cook from "middleware/mogod";
+import mongoose from "mongoose";
 
-export default function handler(req, res) {
-  res.status(200).json({ name: "John Doe" });
+export default async function handler(req, res) {
+  await cook();
+  const newItem = new StringModel({ text: req.body.text });
+  await newItem.save();
+  res.status(200).json({ newItem });
 }
