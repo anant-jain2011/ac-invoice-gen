@@ -5,11 +5,39 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* @media print {
+  body {
+    margin: 0;
+    padding: 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  button {
+    display: none !important;
+  }
+
+  @page {
+    size: A4;
+    margin: 10mm;
+    pap
+  }
+} */
+
+html, body {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
+}
+
 .mtoo td {
-  border: 1px solid #000;
+  @apply border-2
 }
 .mtoo th {
-  border: 1px solid #000;
+  @apply border-2
 }
 
 body {

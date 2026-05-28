@@ -1,5 +1,8 @@
 const mongoose = require("mongoose");
 
-const stringSchema = new mongoose.Schema({
+const ojSchema = new mongoose.Schema({
   text: String,
+  type: String,
 });
+
+module.exports = mongoose.models.Oject || mongoose.model("Oject", ojSchema);

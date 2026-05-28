@@ -34,15 +34,13 @@ export default function Home() {
         {templates.map((template) => (
           <div
             key={template.id}
-            onClick={() => {
-              setSelected(template.id);
-              router.push("table?type=" + template.id);
-            }}
+            onClick={() =>
+              setSelected(template.id)
+            }
             className={`cursor-pointer rounded-2xl p-5 border transition-all
-              ${
-                selected === template.id
-                  ? "border-blue-500 bg-blue-50 shadow-lg scale-105"
-                  : "border-gray-200 hover:shadow-md"
+              ${selected === template.id
+                ? "border-blue-500 bg-blue-50 shadow-lg scale-105"
+                : "border-gray-200 hover:shadow-md"
               }
             `}
           >
@@ -64,7 +62,7 @@ export default function Home() {
           <h3 className="font-semibold">Selected Template:</h3>
           <p className="capitalize">{selected}</p>
 
-          <button className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-xl">
+          <button className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-xl" onClick={() => router.push("table?type=" + selected)}>
             Continue
           </button>
         </div>
