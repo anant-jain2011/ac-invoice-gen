@@ -12,7 +12,6 @@ export default async function handler(req, res) {
 
     const browser = await puppeteer.launch({
       headless: true,
-      executablePath: puppeteer.executablePath(),
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
 
