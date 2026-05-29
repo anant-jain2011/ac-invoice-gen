@@ -105,7 +105,7 @@ let types = {
   ],
 };
 
-let mkeys = ["rate_per_kg", "freight_amount", "weight", "no_of_pkg", "vehicle_charges"];
+let mkeys = ["rate_per_kg", "freight_amount", "weight", "vehicle_charges"];
 
 function Input(props) {
   return (
@@ -113,7 +113,6 @@ function Input(props) {
       className="w-full h-full [&::-webkit-scrollbar]:hidden resize-none overflow-hidden border-gray-800 py-2 px-3 text-sm focus:outline-none"
       autoComplete={"off"}
       spellCheck={false}
-      typ
       onChange={(e) => props.tululu(props.Key, e.target.value, props.idx)}
       {...props}
     />
@@ -121,20 +120,16 @@ function Input(props) {
 }
 
 function InputBox({ items, selected, setSelected, com }) {
-  let its = com ? items.map(a => a.text) : items;
+  const its = com ? items.map((a) => a.text) : items;
+
   const [query, setQuery] = useState("");
-  const [filtereditems, setFiltereditems] = useState(its || []);
 
-  useEffect(() => {
-    const fi =
-      query === ""
-        ? its || []
-        : its?.filter((item) =>
-          item?.toLowerCase().includes(query.toLowerCase())
-        );
-
-    setFiltereditems(fi);
-  }, [query, its]);
+  const filtereditems =
+    query === ""
+      ? its || []
+      : its?.filter((item) =>
+        item?.toLowerCase().includes(query.toLowerCase())
+      );
 
   return (
     <Combobox value={selected} onChange={setSelected}>
@@ -151,7 +146,6 @@ function InputBox({ items, selected, setSelected, com }) {
 
               setQuery(val);
 
-              // allow custom values when com=true
               if (com) {
                 setSelected(val);
               }
@@ -214,7 +208,7 @@ const Table = () => {
       let hh = [...head];
 
       if (bill.t3.rpk) {
-        hh.splice(hh.findIndex(h => h.props.children == "FREIGHT AMOUNT") - 1, 0, <th>RATE PER KG</th>);
+        hh.splice(hh.findIndex(h => h.props.children == "FREIGHT AMOUNT"), 0, <th>RATE PER KG</th>);
       }
       else {
         hh.splice(hh.findIndex(h => h.props.children == "RATE PER KG"), 1);
@@ -222,7 +216,7 @@ const Table = () => {
 
       setHead([...hh]);
     }
-  }, router.query.type == "type3" ? [bill?.t3?.rpk] : []);
+  }, [bill.t3.rpk]);
 
   useEffect(() => {
     if (router.query.type == "type3") {
@@ -237,7 +231,7 @@ const Table = () => {
 
       setHead([...hh]);
     }
-  }, router.query.type == "type3" ? [bill?.t3?.vc] : []);
+  }, [bill.t3.vc]);
 
   useEffect(() => {
     const newTemplate = head
@@ -343,7 +337,9 @@ const Table = () => {
 
     voiceData.forEach((row, index) => {
       ["from", "destination", "sender", "receiver"].forEach((field) => {
-        if (field && !saves.find(s => s.text == row[field] && s.type == field)) {
+        let doe = [];
+        if (field && row[field] && !saves.find(s => s.text == row[field] && s.type == field) && !doe.includes(row[field])) {
+          doe.push(row[field]);
           fetch("/api/save", {
             method: "POST",
             headers: {
@@ -355,7 +351,7 @@ const Table = () => {
       });
     });
 
-    const res = await fetch("/api/pupet", {
+    const res = await fetch("https://ac-invoice-gen.onrender.com/api/pupet", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -364,7 +360,7 @@ const Table = () => {
     });
 
     if (!res.ok) {
-      console.error("Failed to generate PDF");
+      console.log(res?.json());
       return;
     }
 
@@ -373,7 +369,6 @@ const Table = () => {
 
     router.push("/table?id=" + id + "&type=" + router.query.type);
 
-    // Opens the PDF in a new tab
     window.open(url, "_blank");
 
     setLoading(false);
@@ -414,7 +409,7 @@ const Table = () => {
       )
     });
     let resp = await res.json();
-    setWords(resp.candidates[0].content.parts[0].text.toUpperCase());
+    setWords(resp?.candidates?.[0].content?.parts[0]?.text?.toUpperCase());
   }
 
   function tululu(key, val, i) {
@@ -454,12 +449,12 @@ const Table = () => {
     if (type) {
       setHead(types[type]);
 
-      let temp = types[type].reduce((acc, tag) => {
+      let temp = {};
+      types[type].map((tag) => {
         const key = get_(tag.props.children);
 
-        acc[key] = "";
-        acc.sr_no = 1;
-        return acc;
+        temp[key] = "";
+        temp.sr_no = 1;
       }, {});
 
       setVoiceData([{ ...temp }]);
@@ -520,6 +515,7 @@ const Table = () => {
                   <input
                     onChange={(e) => setBill({ ...bill, date: e.target.value })}
                     value={bill.date}
+                    type="date"
                     className="focus:outline-none pl-1"
                     style={{
                       width: "66% !important",
@@ -731,19 +727,19 @@ const Table = () => {
               <tbody className="py-4">
                 <tr>
                   <td className="px-4">
-                    <b>Bill Date - </b>{" "}
+                    <b>BILL DATE - </b>{" "}
                     {bill.date}
                   </td>
                 </tr>
                 <tr>
                   <td className="px-4">
-                    <b>Bill No. - </b>{" "}
+                    <b>BILL NO. - </b>{" "}
                     {bill.code}
                   </td>
                 </tr>
                 <tr>
                   <td className="px-4">
-                    <b>RCM - </b> NO{" "}
+                    <b>RCM (Y/N) - </b> NO{" "}
                   </td>
                 </tr>
                 <tr>
@@ -769,6 +765,11 @@ const Table = () => {
                 <tr key={i}>
                   {head.map((tag, j) => {
                     const o = get_(tag.props.children);
+                    if (o == "hsn_sac_code") {
+                      return <td key={j} className="w-10 h-20 min-h-20 px-1 max-w-10 overflow-hidden break-words whitespace-pre-wrap">
+                        996812
+                      </td>
+                    }
                     if (["freight_amount", "total_amount", "weight"].includes(o)) {
                       return (
                         <td key={j} className="w-10 h-20 min-h-20 px-1 max-w-10 overflow-hidden break-words whitespace-pre-wrap">
