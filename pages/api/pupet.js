@@ -12,7 +12,6 @@ export default async function handler(req, res) {
 
     const browser = await puppeteer.launch({
       headless: true,
-      executablePath: '/opt/render/.cache/puppeteer/chrome/linux-149.0.7827.22/chrome-linux64/chrome',
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
 
