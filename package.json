@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "npx puppeteer browsers install chrome && next dev",
-    "build": "next build",
+    "build": "./render-build.sh",
     "start": "next start",
     "postinstall": "npx puppeteer browsers install chrome@stable"
   },
