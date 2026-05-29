@@ -1,4 +1,4 @@
-next dev
+next build
 # npm run build # uncomment if required
 
 # Store/pull Puppeteer cache with build cache
