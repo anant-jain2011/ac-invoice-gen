@@ -2,6 +2,7 @@
 const nextConfig = {
   /* config options here */
   reactStrictMode: true,
+  serverExternalPackages: ["puppeteer"],
 };
 
 export default nextConfig;
