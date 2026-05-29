@@ -398,7 +398,7 @@ const Table = () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-goog-api-key": "AIzaSyDgqeJR3C-lNfoBuJp4u8VRqc3rIOOiAXM"
+        "X-goog-api-key": process.env.NEXT_PUBLIC_GAPI
       },
       body: JSON.stringify({
         contents: [
