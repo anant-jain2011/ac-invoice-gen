@@ -351,7 +351,7 @@ const Table = () => {
       });
     });
 
-    const res = await fetch("https://ac-invoice-gen.onrender.com/api/pupet", {
+    const res = await fetch("/api/pupet", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
