@@ -9,6 +9,7 @@
     "postinstall": "npx puppeteer browsers install chrome@stable"
   },
   "dependencies": {
+    "@google/genai": "^2.7.0",
     "@headlessui/react": "^2.2.10",
     "@heroicons/react": "^2.2.0",
     "@react-pdf/renderer": "^4.5.1",
@@ -18,7 +19,8 @@
     "next": "16.2.4",
     "puppeteer": "^25.0.4",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "react-toastify": "^11.1.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

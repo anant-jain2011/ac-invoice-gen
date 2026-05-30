@@ -26,6 +26,7 @@ const IvoiceSchema = new mongoose.Schema({
     invoice_no: { type: String, trim: true },
     material_description: { type: String, trim: true },
     vehicle_no: { type: String, trim: true },
+    vehicle_charges: { type: String, trim: true },
     weight: { type: String, trim: true },
     rate_per_kg: { type: String, trim: true },
   }]

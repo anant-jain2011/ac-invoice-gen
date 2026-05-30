@@ -15,6 +15,8 @@ import {
 } from "@heroicons/react/20/solid";
 import { useRouter } from "next/router";
 import Loader from "@/components/Loader";
+import { ToastContainer, toast } from 'react-toastify';
+import { GoogleGenAI } from "@google/genai";
 
 const gsts = ["05AAACI5950L1ZG", "24AAACI5950L1ZG"];
 const adds = {
@@ -72,6 +74,7 @@ let types = {
     <th>SENDER</th>,
     <th>RECEIVER</th>,
     <th>NO. OF PKG</th>,
+    <th>WEIGHT</th>,
     <th>FREIGHT AMOUNT</th>,
     <th>TOTAL AMOUNT</th>,
   ],
@@ -193,6 +196,7 @@ const Table = () => {
   const [template, setTemplate] = useState({});
   const [loading, setLoading] = useState(false);
   const [saves, setSaves] = useState([]);
+  const [dw, setDw] = useState({});
   const [bill, setBill] = useState({
     date: "",
     code: "",
@@ -202,36 +206,79 @@ const Table = () => {
     t3: { rpk: false, vc: false },
   });
   const [voiceData, setVoiceData] = useState([]);
+  const resizeRef = useRef(null);
+
+  function startResize(e, key) {
+    resizeRef.current = {
+      key,
+      startX: e.clientX,
+      startWidth: dw[key] || 60,
+    };
+  }
 
   useEffect(() => {
-    if (router.query.type == "type3") {
-      let hh = [...head];
+    function onMove(e) {
+      if (!resizeRef.current) return;
 
-      if (bill.t3.rpk) {
-        hh.splice(hh.findIndex(h => h.props.children == "FREIGHT AMOUNT"), 0, <th>RATE PER KG</th>);
-      }
-      else {
-        hh.splice(hh.findIndex(h => h.props.children == "RATE PER KG"), 1);
-      }
+      const { key, startX, startWidth } = resizeRef.current;
 
-      setHead([...hh]);
+      const newWidth = Math.max(
+        30,
+        startWidth + e.clientX - startX
+      );
+
+      setDw(prev => {
+        let r = { ...prev, [key]: newWidth };
+        localStorage.setItem("sData", JSON.stringify(r));
+        return r;
+      });
+
     }
-  }, [bill.t3.rpk]);
+
+    function onUp() {
+      resizeRef.current = null;
+    }
+
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+  }, []);
+
+  let updateRPKVC = (rpk, vc) => {
+    if (router.query.type !== "type3") return;
+
+    let hh = [...types.type3];
+
+    const freightIdx = hh.findIndex(
+      h => h.props.children === "FREIGHT AMOUNT"
+    );
+
+    if (rpk) {
+      hh.splice(freightIdx, 0, <th>RATE PER KG</th>);
+    }
+
+    if (vc) {
+      const idx = hh.findIndex(
+        h => h.props.children === "FREIGHT AMOUNT"
+      );
+
+      hh.splice(
+        idx + 1,
+        0,
+        <th>VEHICLE CHARGES</th>
+      );
+    }
+
+    setHead(hh);
+  };
 
   useEffect(() => {
-    if (router.query.type == "type3") {
-      let hh = [...head];
-
-      if (bill.t3.vc) {
-        hh.splice(hh.findIndex(h => h.props.children == "FREIGHT AMOUNT") + 1, 0, <th>VEHICLE CHARGES</th>);
-      }
-      else {
-        hh.splice(hh.findIndex(h => h.props.children == "VEHICLE CHARGES"), 1);
-      }
-
-      setHead([...hh]);
-    }
-  }, [bill.t3.vc]);
+    updateRPKVC(bill.t3.rpk, bill.t3.vc);
+  }, [bill.t3]);
 
   useEffect(() => {
     const newTemplate = head
@@ -265,14 +312,15 @@ const Table = () => {
   }, [head]);
 
   function hasSd(k) {
-    return parseInt(k) == k ? parseInt(k) : k;
+    return parseInt(k) == k ? parseInt(k) : +k;
   }
 
-  const save = () => {
-    setLoading(true);
-    
+  const save = async () => {
+    setLoading({ text: "Saving invoice...", st: true });
+
     var { id, type } = router.query;
 
+    let recentDataRaw = localStorage.getItem("recents");
     let recentData = recentDataRaw ? JSON.parse(recentDataRaw) : [];
 
     if (!id) {
@@ -295,6 +343,7 @@ const Table = () => {
       let data = await resp.json();
       id = data.id;
     } else {
+      console.log("Saving bill:", voiceData, head, template);
       await fetch("/api/add-voice", {
         method: "POST",
         headers: {
@@ -319,12 +368,15 @@ const Table = () => {
         }
       });
     });
-    
-    setLoading(false);
+
+    router.push("/table?id=" + id + "&type=" + router.query.type);
+
+    setLoading({ text: "", st: false });
+    toast.success("Invoice saved successfully!");
   };
 
   const getPdf = async () => {
-    setLoading(true);
+    setLoading({ text: "Generating PDF...", st: true });
 
     const html = `
 <!DOCTYPE html>
@@ -356,10 +408,6 @@ const Table = () => {
 </html>
 `;
 
-    var { id, type } = router.query;
-
-    let recentDataRaw = localStorage.getItem("recents");
-
     const res = await fetch("/api/pupet", {
       method: "POST",
       headers: {
@@ -376,18 +424,11 @@ const Table = () => {
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
 
-    router.push("/table?id=" + id + "&type=" + router.query.type);
-
     window.open(url, "_blank");
 
-    setLoading(false);
+    setLoading({ text: "", st: false });
 
-    // const url = URL.createObjectURL(blob);
-
-    // const a = document.createElement("a");
-    // a.href = url;
-    // a.download = "invoice.pdf";
-    // a.click();
+    toast.success("PDF generated successfully!");
   };
 
   function get_(x) {
@@ -398,27 +439,16 @@ const Table = () => {
   }
 
   async function getWords() {
-    let res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-goog-api-key": process.env.NEXT_PUBLIC_GAPI
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              {
-                "text": "Return the amount in words, and nothing else, for eg: 1234.7 -> 'one thousand two hundred thirty four rupees and seventy paise only', do not include the single quotes, only write paise when there is anything but 0 in the decimal part,  the num is : " + (gt * 1.18)
-              }
-            ]
-          }
-        ]
-      }
-      )
+    const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3.1-flash-lite",
+      contents: "Return the amount in words, and nothing else, for eg: 1234.7 -> 'one thousand two hundred thirty four rupees and seventy paise only', do not include the single quotes, only write paise when there is anything but 0 in the decimal part,  the num is : " + (gt * 1.18),
     });
-    let resp = await res.json();
-    setWords(resp?.candidates?.[0].content?.parts[0]?.text?.toUpperCase());
+
+    console.log(response.text);
+
+    setWords(response?.text?.toUpperCase());
   }
 
   function tululu(key, val, i) {
@@ -455,6 +485,19 @@ const Table = () => {
   useEffect(() => {
     let { type, id } = router.query;
 
+    window.addEventListener('beforeunload', (event) => {
+      // Cancel the event as stated by the standard.
+      event.preventDefault();
+
+      // Required by some browsers (e.g., Chrome) to trigger the prompt.
+      event.returnValue = '';
+    });
+
+    let sd = JSON.parse(localStorage.getItem("sData") || "{}");
+    console.log(sd);
+
+    setDw(sd);
+
     if (type) {
       setHead(types[type]);
 
@@ -486,7 +529,7 @@ const Table = () => {
           return v;
         })
         setVoiceData(temp);
-        setBill(bill2);
+        setBill({ ...bill2, t3: { rpk: bill2.t3?.rpk || false, vc: bill2.t3?.vc || false } });
         setWords(data.words);
         //also set gt
         let amt = 0;
@@ -494,11 +537,13 @@ const Table = () => {
         setGt(amt);
       });
     }
+
+    setBill(prev => ({ ...prev, t3: { rpk: router.query.type == "type3" ? prev.t3.rpk : false, vc: router.query.type == "type3" ? prev.t3.vc : false } }));
   }, [router.query]);
 
   if (voiceData.length && head.length && Object.keys(bill).length) {
     return (
-      <main className="min-h-screen w-full bg-gradient-to-br from-slate-100 viawhite to-slate-200 text-slate-900 py-10">
+      <main className="min-h-screen w-full bg-gradient-to-br from-slate-100 viawhite to-slate-200 text-slate-900 py-10" draggable={false}>
         <div className="w-[95%] mx-auto h-80 px-1/6 flex justify-between items-center">
           <table className="border w-1/4">
             <thead className="border border-black">
@@ -681,6 +726,7 @@ const Table = () => {
             />
           </Switch>
         </div>
+
         {router.query.type === "type3" && <>
           <div className="mx-auto w-[90%] flex">
             Rate / KG is {bill.t3.rpk ? "Present" : "Not Present"}
@@ -709,90 +755,130 @@ const Table = () => {
             </Switch>
           </div>
         </>}
+
         <h1 className="text-center text-4xl my-12">Preview Table</h1>
 
         <div className="w-[95%] mx-auto" ref={ref}>
           <div className="bg-black h-0.5" />
-          <div className="w-full h-60 px-1/6 flex justify-between items-center mb-8">
-            <table className="border-2 border-black w-1/4">
+
+          <div className="w-full px-1/6 flex justify-between items-center my-8" style={{ fontSize: 15, height: 300 }}>
+            <table className="border-2 border-black w-1/4" height={264}>
               <thead className="border-2 border-black">
                 <tr>
-                  <th className="px-4">
+                  <th className="px-4 h-10 text-left">
                     GSTIN - {bill.gst}
                   </th>
                 </tr>
               </thead>
 
-              {adds[bill.gst]}
+              {/* FIX: Removed the wrapper <div>. The `adds` object already provides the <tbody> */}
+              {bill.gst && adds[bill.gst] ? (
+                <tbody className="flex flex-col h-full justify-center">
+                  {adds[bill.gst].props.children}
+                </tbody>
+              ) : (
+                <tbody>
+                  <tr>
+                    <td className="px-4 py-2 text-gray-400 italic">No GSTIN Selected</td>
+                  </tr>
+                </tbody>
+              )}
             </table>
 
-            <table className="border-2 border-black w-1/4 my-20">
+            <table className="border-2 border-black w-1/4 my-20" height={264}>
               <thead className="border-2 border-black">
                 <tr>
-                  <th className="px-4">GSTIN - 05EJVPS4650G1ZN</th>
+                  <th className="px-4 h-10 text-left">GSTIN - 05EJVPS4650G1ZN</th>
                 </tr>
               </thead>
 
-              <tbody className="py-4">
-                <tr>
-                  <td className="px-4">
-                    <b>BILL DATE - </b>{" "}
-                    {bill.date}
-                  </td>
-                </tr>
-                <tr>
-                  <td className="px-4">
-                    <b>BILL NO. - </b>{" "}
-                    {bill.code}
-                  </td>
-                </tr>
-                <tr>
-                  <td className="px-4">
-                    <b>RCM (Y/N) - </b> NO{" "}
-                  </td>
-                </tr>
-                <tr>
-                  <td className="px-4">
-                    <b>STATE - </b> UTTARAKHAND{" "}
-                  </td>
-                </tr>
-                <tr>
-                  <td className="px-4">
-                    <b>STATE CODE - </b> 05{" "}
-                  </td>
-                </tr>
-              </tbody>
+              <div className="flex items-center h-full">
+                <tbody className="py-4 flex flex-col h-full justify-center">
+                  <tr>
+                    <td className="px-4">
+                      <b>BILL DATE - </b>{" "}
+                      <span style={{ letterSpacing: 1 }}>{bill.date.split("-").reverse().join("/")}</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="px-4">
+                      <b>BILL NO - </b>{" "}
+                      {bill.code}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="px-4">
+                      <b>RCM (Y/N) - </b> NO{" "}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="px-4">
+                      <b>STATE - </b> UTTARAKHAND{" "}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="px-4">
+                      <b>STATE CODE - </b> 05{" "}
+                    </td>
+                  </tr>
+                </tbody>
+              </div>
             </table>
           </div>
 
           <table
-            className="table-fixed text-xs w-full border-2 border-collapse text-center px-1/6 mtoo mb-4 relative"
+            className="text-xs w-full border-2 border-collapse text-center px-1/6 mtoo mb-4 relative"
+            style={{
+              tableLayout: "fixed",
+              width: "max-content",
+              minWidth: "100%",
+            }}
           >
             <tbody>
-              <tr>{...head}</tr>
+              <tr className="h-12">
+                {head.map((tag, j) => {
+                  const key = get_(tag.props.children);
+
+                  return (
+                    <th
+                      key={j}
+                      className="relative px-2"
+                      style={{
+                        width: dw[key] || 60,
+                        minWidth: 40,
+                      }}
+                    >
+                      {tag.props.children}
+
+                      <div
+                        className="absolute top-0 right-0 h-full w-2 cursor-col-resize select-none"
+                        onMouseDown={(e) => startResize(e, key)}
+                      />
+                    </th>
+                  );
+                })}
+              </tr>
               {voiceData.map((r, i) => (
                 <tr key={i}>
                   {head.map((tag, j) => {
                     const o = get_(tag.props.children);
+                    let gc = "h-20 min-h-20 px-1 overflow-hidden break-words whitespace-pre-wrap";
+
                     if (o == "hsn_sac_code") {
-                      return <td key={j} className="w-10 h-20 min-h-20 px-1 max-w-10 overflow-hidden break-words whitespace-pre-wrap">
-                        996812
-                      </td>
+                      return <td key={j} className={gc} style={{ width: dw[o] }}>996812</td>
                     }
-                    if (o == "rate_per_kg") {
-                      return <td key={j} className="w-10 h-20 min-h-20 px-1 max-w-10 overflow-hidden break-words whitespace-pre-wrap">
-                        {voiceData[i][o]} /-
-                      </td>
+                    else if (o == "sr_no") {
+                      return <td key={j} className={gc + " w-8"}>{voiceData[i][o]}</td>
                     }
-                    if (["freight_amount", "total_amount", "weight"].includes(o)) {
+                    else if (["freight_amount", "total_amount", "weight", "vehicle_charges"].includes(o)) {
                       return (
-                        <td key={j} className="w-10 h-20 min-h-20 px-1 max-w-10 overflow-hidden break-words whitespace-pre-wrap">
-                          {["freight_amount", "total_amount"].includes(o) && `RS. ${parseInt(voiceData[i][o] || 0)} /-`}
-                          {o == "weight" && voiceData[i][o] + " KG"}
+                        <td key={j} className={gc} style={{ width: dw[o] }}>
+                          {["freight_amount", "total_amount", "vehicle_charges"].includes(o) && `RS. ${parseInt(voiceData[i][o] || 0).toLocaleString("en-IN")} /-`}
+                          {o == "weight" && ((router.query.type != "type1") ? voiceData[i][o] + " KG" : "SM")}
                         </td>
                       )
                     }
-                    return <td key={j} className="w-10 h-20 min-h-20 px-1 max-w-10 overflow-hidden break-words whitespace-pre-wrap">{voiceData[i][o]}</td>
+                    return <td key={j} className={gc} style={{ width: dw[o] }}>{voiceData[i][o] + ((o == "rate_per_kg") ? " /-" : "")}</td>
                   })}
                 </tr>
               ))}
@@ -805,37 +891,37 @@ const Table = () => {
                   </div>
                 </td>
               </tr>
-              <tr className="h-10">
+              <tr className="h-14">
                 <th colSpan={head.length - 5} className="text-right pr-10">TAXABLE VALUE</th>
-                <td>RS. {hasSd(gt)} /-</td>
+                <td>RS. {hasSd(gt).toLocaleString("en-IN")} /-</td>
               </tr>
               {!bill.igst ? (
                 <>
-                  <tr className="h-10">
+                  <tr className="h-14">
                     <th colSpan={head.length - 5} className="text-right pr-10">CGST 9%</th>
-                    <td>RS. {hasSd((gt * 0.09).toFixed(2))} /-</td>
+                    <td>RS. {hasSd((gt * 0.09).toFixed(2)).toLocaleString("en-IN")} /-</td>
                   </tr>
-                  <tr className="h-10">
+                  <tr className="h-14">
                     <th colSpan={head.length - 5} className="text-right pr-10">SGST 9%</th>
-                    <td>RS. {hasSd((gt * 0.09).toFixed(2))} /-</td>
+                    <td>RS. {hasSd((gt * 0.09).toFixed(2)).toLocaleString("en-IN")} /-</td>
                   </tr>
                 </>
               ) : (
-                <tr className="h-10">
+                <tr className="h-14">
                   <th colSpan={head.length - 5} className="text-right pr-10">IGST 18%</th>
-                  <td>RS. {hasSd((gt * 0.18).toFixed(2))} /-</td>
+                  <td>RS. {hasSd((gt * 0.18).toFixed(2)).toLocaleString("en-IN")} /-</td>
                 </tr>
               )}
 
-              <tr className="h-10">
+              <tr className="h-14">
                 <th colSpan={head.length - 5} className="text-right pr-10">GRAND TOTAL</th>
-                <td>RS. {hasSd((gt + gt * 0.18).toFixed(2))} /-</td>
+                <td><b>RS. {hasSd((gt + gt * 0.18).toFixed(2)).toLocaleString("en-IN")} /-</b></td>
               </tr>
             </tbody>
           </table>
 
-          <div className="flex justify-between w-full h-48 font-bold mt-12">
-            <div className="border-2 border-black px-10 flex flex-col justify-between max-w-96 relative">
+          <div className="flex justify-between w-full font-bold mt-12" style={{ height: 270 }}>
+            <div className="border-2 border-black px-10 flex flex-col justify-between max-w-96 relative h-full">
               <span className="text-xs mt-2" onClick={getWords}>TOTAL AMOUNT IN WORDS -</span>
               <div className="self-center break-words text-balance -mt-10">{words}.</div>
               <div></div>
@@ -850,9 +936,11 @@ const Table = () => {
         </div>
 
         <button className="mx-auto px-3 py-2 bg-blue-600 text-white rounded-lg block mt-16 cursor-pointer" onClick={() => save(ref?.current)}>Save</button>
-        <button className="mx-auto px-3 py-2 bg-blue-600 text-white rounded-lg block mt-16 cursor-pointer" onClick={() => getPdf(ref?.current)}>Get PDF</button>
+        <button className="mx-auto px-3 py-2 bg-blue-600 text-white rounded-lg block mt-4 cursor-pointer" onClick={() => getPdf(ref?.current)}>Get PDF</button>
 
-        {loading && <Loader text="Saving and generating PDF..." />}
+        {loading.st && <Loader text={loading.text} />}
+
+        <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
       </main>
     );
   } else {
