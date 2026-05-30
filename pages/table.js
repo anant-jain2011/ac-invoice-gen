@@ -400,7 +400,7 @@ const Table = () => {
           {
             parts: [
               {
-                "text": "Return the amount in words, and nothing else, for eg: 1234.7 -> 'one thousand two hundred thirty four and seventy paise only', do not include the single quotes, only write paise when there is anything but 0 in the decimal part,  the num is : " + (gt * 1.18)
+                "text": "Return the amount in words, and nothing else, for eg: 1234.7 -> 'one thousand two hundred thirty four rupees and seventy paise only', do not include the single quotes, only write paise when there is anything but 0 in the decimal part,  the num is : " + (gt * 1.18)
               }
             ]
           }
@@ -828,9 +828,9 @@ const Table = () => {
               <div className="absolute -bottom-4 -mx-10" style={{ fontSize: 10, textAlign: "left" }}>COMPUTER GENERATED BILL</div>
             </div>
             <div className="border-2 border-black px-10 flex flex-col justify-between text-center relative">
-              <div className="text-xs block mt-2">E. & O.E <br /> FOR, ADITYA CARGO MOVERS. TRANSPORT AND GOODS SERVICE</div>
+              <div className="text-xs block mt-2">E. & O.E <br /> FOR, ADITYA CARGO MOVERS TRANSPORT AND GOODS SERVICE</div>
               <div className="text-xs block">AUTHORISED SIGNATORY</div>
-              <div className="self-center absolute -bottom-4" style={{ fontSize: 10, textAlign: "center" }}>CERTIFIED THAT THE PARTICULARS. GIVEN ABOVE ARE TRUE AND CORRECT</div>
+              <div className="self-center absolute -bottom-4" style={{ fontSize: 10, textAlign: "center" }}>CERTIFIED THAT THE PARTICULARS GIVEN ABOVE ARE TRUE AND CORRECT</div>
             </div>
           </div>
         </div>
