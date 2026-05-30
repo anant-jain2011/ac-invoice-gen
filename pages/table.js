@@ -268,42 +268,11 @@ const Table = () => {
     return parseInt(k) == k ? parseInt(k) : k;
   }
 
-  const getPhoto = async () => {
+  const save = () => {
     setLoading(true);
-
-    const html = `
-<!DOCTYPE html>
-<html>
-<head>
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <style>
-    body {
-      padding: 20px;
-    }
-
-    table {
-      border-collapse: collapse;
-    }
-
-    .mtoo td {
-  border: 2px solid black;
-}
-.mtoo th {
-  border: 2px solid black;
-}
-  </style>
-</head>
-
-<body>
-  ${ref?.current?.outerHTML}
-</body>
-</html>
-`;
-
+    
     var { id, type } = router.query;
 
-    let recentDataRaw = localStorage.getItem("recents");
     let recentData = recentDataRaw ? JSON.parse(recentDataRaw) : [];
 
     if (!id) {
@@ -350,6 +319,46 @@ const Table = () => {
         }
       });
     });
+    
+    setLoading(false);
+  };
+
+  const getPdf = async () => {
+    setLoading(true);
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    body {
+      padding: 20px;
+    }
+
+    table {
+      border-collapse: collapse;
+    }
+
+    .mtoo td {
+  border: 2px solid black;
+}
+.mtoo th {
+  border: 2px solid black;
+}
+  </style>
+</head>
+
+<body>
+  ${ref?.current?.outerHTML}
+</body>
+</html>
+`;
+
+    var { id, type } = router.query;
+
+    let recentDataRaw = localStorage.getItem("recents");
 
     const res = await fetch("/api/pupet", {
       method: "POST",
@@ -770,6 +779,11 @@ const Table = () => {
                         996812
                       </td>
                     }
+                    if (o == "rate_per_kg") {
+                      return <td key={j} className="w-10 h-20 min-h-20 px-1 max-w-10 overflow-hidden break-words whitespace-pre-wrap">
+                        {voiceData[i][o]} /-
+                      </td>
+                    }
                     if (["freight_amount", "total_amount", "weight"].includes(o)) {
                       return (
                         <td key={j} className="w-10 h-20 min-h-20 px-1 max-w-10 overflow-hidden break-words whitespace-pre-wrap">
@@ -835,7 +849,8 @@ const Table = () => {
           </div>
         </div>
 
-        <button className="mx-auto px-3 py-2 bg-blue-600 text-white rounded-lg block mt-16 cursor-pointer" onClick={() => getPhoto(ref?.current)}>Save & Get PDF</button>
+        <button className="mx-auto px-3 py-2 bg-blue-600 text-white rounded-lg block mt-16 cursor-pointer" onClick={() => save(ref?.current)}>Save</button>
+        <button className="mx-auto px-3 py-2 bg-blue-600 text-white rounded-lg block mt-16 cursor-pointer" onClick={() => getPdf(ref?.current)}>Get PDF</button>
 
         {loading && <Loader text="Saving and generating PDF..." />}
       </main>
