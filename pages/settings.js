@@ -1,15 +1,62 @@
 import { useState } from 'react';
 
+function get_(x) {
+    return x.replace(/<\/?[^>]+(>|$)/g, "")
+      .replace(/[^a-zA-Z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "")
+      .toLowerCase();
+}
+
+let types = [
+    <th>SR NO.</th>,
+    <th>CN DATE</th>,
+    <th>CN NO.</th>,
+    <th>FROM</th>,
+    <th>DESTINATION</th>,
+    <th>HSN/SAC CODE</th>,
+    <th>TRANSPORT</th>,
+    <th>SENDER</th>,
+    <th>RECEIVER</th>,
+    <th>NO. OF PKG</th>,
+    <th>FREIGHT AMOUNT</th>,
+    <th>TOTAL AMOUNT</th>,
+    <th>SR NO.</th>,
+    <th>CN DATE</th>,
+    <th>CN NO.</th>,
+    <th>FROM</th>,
+    <th>DESTINATION</th>,
+    <th>HSN/SAC CODE</th>,
+    <th>TRANSPORT</th>,
+    <th>NO. OF PKG</th>,
+    <th>FREIGHT AMOUNT</th>,
+    <th>TOTAL AMOUNT</th>,
+    <th>SR NO.</th>,
+    <th>CN DATE</th>,
+    <th>CN NO.</th>,
+    <th>FROM</th>,
+    <th>DESTINATION</th>,
+    <th>HSN/SAC CODE</th>,
+    <th>TRANSPORT</th>,
+    <th>INVOICE NO.</th>,
+    <th>MATERIAL DESCRIPTION</th>,
+    <th>VEHICLE NO.</th>,
+    <th>NO. OF PKG</th>,
+    <th>WEIGHT</th>,
+    <th>FREIGHT AMOUNT</th>,
+    <th>TOTAL AMOUNT</th>,
+  ];
+
 export default function SettingsPage() {
-  const [companyName, setCompanyName] = useState('');
-  const [email, setEmail] = useState('');
-  const [currency, setCurrency] = useState('USD');
+  const [data, setData] = useState({});
   const [saveMessage, setSaveMessage] = useState('');
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    setSaveMessage('Settings saved successfully.');
+  const handleChange = (e) => {
+    setData({...data, [e.target.name] : e.target.value });
   };
+
+  const save = () => {
+    localStorage.setItem("sData", JSON.stringify(data));
+  }
 
   return (
     <main style={{ padding: '2rem', fontFamily: 'system-ui, sans-serif', maxWidth: '800px', margin: '0 auto' }}>
@@ -19,45 +66,19 @@ export default function SettingsPage() {
       </p>
 
           <h2 style={{ marginBottom: '0.75rem' }}>Dekha Jayega</h2>
-      {/* <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1rem' }}>
-        <section style={{ padding: '1.5rem', border: '1px solid #ddd', borderRadius: '10px' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem' }}>
-            Company Name
-            <input
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-              placeholder="Acme Corporation"
-              style={{ width: '100%', padding: '0.75rem', marginTop: '0.5rem', borderRadius: '6px', border: '1px solid #ccc' }}
-            />
-          </label>
-          <label style={{ display: 'block', marginBottom: '0.5rem' }}>
-            Contact Email
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="hello@example.com"
-              style={{ width: '100%', padding: '0.75rem', marginTop: '0.5rem', borderRadius: '6px', border: '1px solid #ccc' }}
-            />
-          </label>
-        </section>
-
-        <section style={{ padding: '1.5rem', border: '1px solid #ddd', borderRadius: '10px' }}>
+       <form onSubmit={save} style={{ display: 'grid', gap: '1rem' }}>
+{types.map(t=> <section style={{ padding: '1.5rem', border: '1px solid #ddd', borderRadius: '10px' }}>
           <h2 style={{ marginBottom: '0.75rem' }}>Preferences</h2>
           <label style={{ display: 'block', marginBottom: '0.5rem' }}>
-            Default Currency
-            <select
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value)}
-              style={{ width: '100%', padding: '0.75rem', marginTop: '0.5rem', borderRadius: '6px', border: '1px solid #ccc' }}
-            >
-              <option value="USD">USD</option>
-              <option value="EUR">EUR</option>
-              <option value="GBP">GBP</option>
-              <option value="INR">INR</option>
-            </select>
+           {t.props.children}
           </label>
-        </section>
+            <input
+              name={get_(t.props.children)}
+              value={data[get_(t.props.children)]}
+              onChange={handleChange}
+              style={{ width: '100%', padding: '0.75rem', marginTop: '0.5rem', borderRadius: '6px', border: '1px solid #ccc' }}
+            />
+        </section>)}
 
         <button
           type="submit"
@@ -66,10 +87,6 @@ export default function SettingsPage() {
           Save Settings
         </button>
       </form>
-
-      {saveMessage && (
-        <p style={{ marginTop: '1rem', color: '#166534', fontWeight: '600' }}>{saveMessage}</p>
-      )} */}
     </main>
   );
 }
