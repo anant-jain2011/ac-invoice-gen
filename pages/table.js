@@ -108,7 +108,7 @@ let types = {
   ],
 };
 
-let mkeys = ["rate_per_kg", "freight_amount", "weight", "vehicle_charges"];
+let mkeys = ["rate_per_kg", "freight_amount", "vehicle_charges"];
 
 function Input(props) {
   return (
