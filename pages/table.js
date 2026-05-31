@@ -207,6 +207,8 @@ const Table = () => {
   });
   const [voiceData, setVoiceData] = useState([]);
   const resizeRef = useRef(null);
+  const [rh, setRh] = useState(80);
+  const resizeRowRef = useRef(null);
 
   function startResize(e, key) {
     resizeRef.current = {
@@ -216,27 +218,49 @@ const Table = () => {
     };
   }
 
+  function startRowResize(e, rowIndex) {
+    resizeRowRef.current = {
+      rowIndex,
+      startY: e.clientY,
+      startHeight: rh || 80,
+    };
+
+    e.preventDefault();
+  }
+
   useEffect(() => {
     function onMove(e) {
-      if (!resizeRef.current) return;
+      // column resize
+      if (resizeRef.current) {
+        let prevSDATA = JSON.parse(localStorage.getItem("sData") || "{}");
+        const { key, startX, startWidth } = resizeRef.current;
 
-      const { key, startX, startWidth } = resizeRef.current;
+        const newWidth = Math.max(
+          30,
+          startWidth + e.clientX - startX
+        );
 
-      const newWidth = Math.max(
-        30,
-        startWidth + e.clientX - startX
-      );
+        setDw(prev => {
+          const r = { ...prev, [key]: newWidth };
+          localStorage.setItem("sData", JSON.stringify({ dw: r, rh: prevSDATA.rh }));
+          return r;
+        });
+      }
 
-      setDw(prev => {
-        let r = { ...prev, [key]: newWidth };
-        localStorage.setItem("sData", JSON.stringify(r));
-        return r;
-      });
+      // row resize
+      if (resizeRowRef.current) {
+        let prevSDATA = JSON.parse(localStorage.getItem("sData") || "{}");
+        const { startY, startHeight } = resizeRowRef.current;
+        const newHeight = Math.max(40, startHeight + e.clientY - startY);
 
+        setRh(newHeight);
+        localStorage.setItem("sData", JSON.stringify({ dw: prevSDATA.dw, rh: newHeight }));
+      }
     }
 
     function onUp() {
       resizeRef.current = null;
+      resizeRowRef.current = null;
     }
 
     window.addEventListener("mousemove", onMove);
@@ -392,6 +416,10 @@ const Table = () => {
     table {
       border-collapse: collapse;
     }
+    
+    .cursor-row-resize {
+      display: none;
+    }
 
     .mtoo td {
   border: 2px solid black;
@@ -456,9 +484,9 @@ const Table = () => {
       const newData = [...prevData];
       let amt = 0;
       newData[i] = { ...newData[i], [key]: mkeys.includes(key) ? val.replace(/[^0-9.]/g, "").replace(/(\..*?)\..*/g, '$1') : val };
-      if (router.query.type == "type3" && bill.t3.rpk) {
-        newData[i].freight_amount = +(newData[i].rate_per_kg || 0) * +(newData[i].weight || 0);
-      }
+      // if (router.query.type == "type3" && bill.t3.rpk) {
+      //   newData[i].freight_amount = +(newData[i].rate_per_kg || 0) * +(newData[i].weight || 0);
+      // }
       newData[i].total_amount = +(newData[i].freight_amount || 0) + +(bill?.t3?.vc ? (newData[i].vehicle_charges || 0) : 0);
       newData.map(a => amt += +a.total_amount);
       setGt(amt);
@@ -496,7 +524,8 @@ const Table = () => {
     let sd = JSON.parse(localStorage.getItem("sData") || "{}");
     console.log(sd);
 
-    setDw(sd);
+    setDw(sd.dw || {});
+    setRh(sd.rh || 80);
 
     if (type) {
       setHead(types[type]);
@@ -641,7 +670,7 @@ const Table = () => {
                   return <td key={j}>
                     <Input
                       value={r[o]}
-                      disabled={["sr_no", "total_amount"].includes(o) || (router.query.type == "type3" && (o == "freight_amount") && bill.t3.rpk)}
+                      disabled={["sr_no", "total_amount"].includes(o)}// || (router.query.type == "type3" && (o == "freight_amount") && bill.t3.rpk)}
                       idx={i}
                       Key={o}
                       {...{ tululu }}
@@ -859,7 +888,12 @@ const Table = () => {
                 })}
               </tr>
               {voiceData.map((r, i) => (
-                <tr key={i}>
+                <tr
+                  key={i}
+                  style={{
+                    height: rh || 80,
+                  }}
+                >
                   {head.map((tag, j) => {
                     const o = get_(tag.props.children);
                     let gc = "h-20 min-h-20 px-1 overflow-hidden break-words whitespace-pre-wrap";
@@ -882,6 +916,14 @@ const Table = () => {
                   })}
                 </tr>
               ))}
+              <tr className="h-2 w-full cursor-row-resize">
+                <div
+                  className="w-full h-2 bg-red-500 opacity-50 cursor-row-resize"
+                  onMouseDown={(e) =>
+                    startRowResize(e)
+                  }
+                />
+              </tr>
               <tr>
                 <td colSpan={4} rowSpan={bill.igst ? 4 : 5} className="h-40">
                   <div className="flex items-end text-xs w-full h-full">
