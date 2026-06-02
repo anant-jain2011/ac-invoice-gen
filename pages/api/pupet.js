@@ -2,24 +2,28 @@ import puppeteer from "puppeteer";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
-    return res.status(405).json({
-      message: "Method not allowed",
-    });
+    return res.status(405).json({ message: "Method not allowed" });
   }
+
+  let browser = null;
 
   try {
     const { html } = req.body;
 
-    const browser = await puppeteer.launch({
+    browser = await puppeteer.launch({
       headless: true,
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
 
     const page = await browser.newPage();
 
+    // Use domcontentloaded for fast local HTML parsing
     await page.setContent(html, {
-      waitUntil: "networkidle0",
+      waitUntil: "domcontentloaded",
     });
+
+    // Optional: If you use external fonts/images, wait for them specifically
+    // await page.evaluateHandle(() => document.fonts.ready);
 
     const pdf = await page.pdf({
       format: "A2",
@@ -32,21 +36,17 @@ export default async function handler(req, res) {
       },
     });
 
-    await browser.close();
-
     res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", 'attachment; filename="invoice.pdf"');
+    return res.end(pdf);
 
-    res.setHeader(
-      "Content-Disposition",
-      'attachment; filename="invoice.pdf"'
-    );
-
-    res.end(pdf);
   } catch (err) {
-    console.error(err);
-
-    res.status(500).json({
-      message: "PDF generation failed",
-    });
+    console.error("PDF Generation Error:", err);
+    return res.status(500).json({ message: "PDF generation failed" });
+  } finally {
+    // Always close browser to prevent memory leak timeouts
+    if (browser !== null) {
+      await browser.close();
+    }
   }
 }
