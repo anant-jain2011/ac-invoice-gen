@@ -795,7 +795,7 @@ const Table = () => {
           <div className="bg-black h-0.5" />
 
           <div className="w-full px-1/6 flex justify-between items-center my-8" style={{ fontSize: 15, height: 300 }}>
-            <table className="border-2 border-black w-1/4" height={264}>
+            <table className="border-2 border-black w-[30%]" height={264}>
               <thead className="border-2 border-black">
                 <tr>
                   <th className="px-4 h-10 text-left">
