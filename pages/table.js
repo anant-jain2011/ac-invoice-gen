@@ -57,7 +57,7 @@ const adds = {
       <td className="px-4">NADIAD TALUK, KHEDA DISTRICT,</td>
     </tr>
     <tr>
-      <td className="px-4">GUJARAT, INDIA - 249403</td>
+      <td className="px-4">GUJARAT, INDIA - 387320</td>
     </tr>
   </tbody>
 };
