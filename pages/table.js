@@ -28,7 +28,7 @@ const adds = {
       <td className="px-4">M/S ITC LIMITED,</td>
     </tr>
     <tr>
-      <td className="px-4">PACKAGING</td>
+      <td className="px-4">PACKAGING & PRINTING PRODUCT FACTORY,</td>
     </tr>
     <tr>
       <td className="px-4">PLOT NO - 1, SECTOR 11,</td>
