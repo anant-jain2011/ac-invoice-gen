@@ -207,7 +207,7 @@ const Table = () => {
     gst: "",
     add: "",
     igst: false,
-    t3: { rpk: false, vc: false },
+    t3: { rpk: false, vc: false, fac: false },
   });
   const [voiceData, setVoiceData] = useState([]);
   const resizeRef = useRef(null);
@@ -488,9 +488,9 @@ const Table = () => {
       const newData = [...prevData];
       let amt = 0;
       newData[i] = { ...newData[i], [key]: mkeys.includes(key) ? val.replace(/[^0-9.]/g, "").replace(/(\..*?)\..*/g, '$1') : val };
-      // if (router.query.type == "type3" && bill.t3.rpk) {
-      //   newData[i].freight_amount = +(newData[i].rate_per_kg || 0) * +(newData[i].weight || 0);
-      // }
+      if (router.query.type == "type3" && bill.t3.fac) {
+        newData[i].freight_amount = +(newData[i].rate_per_kg || 0) * +(newData[i].weight || 0);
+      }
       newData[i].total_amount = +(newData[i].freight_amount || 0) + +(bill?.t3?.vc ? (newData[i].vehicle_charges || 0) : 0);
       newData.map(a => amt += +a.total_amount);
       setGt(amt);
@@ -564,7 +564,7 @@ const Table = () => {
           return v;
         })
         setVoiceData(temp);
-        setBill({ ...bill2, t3: { rpk: bill2.t3?.rpk || false, vc: bill2.t3?.vc || false } });
+        setBill({ ...bill2, t3: { rpk: bill2.t3?.rpk || false, vc: bill2.t3?.vc || false, fac: bill2.t3?.fac || false } });
         setWords(data.words);
         //also set gt
         let amt = 0;
@@ -573,7 +573,7 @@ const Table = () => {
       });
     }
 
-    setBill(prev => ({ ...prev, t3: { rpk: router.query.type == "type3" ? prev.t3.rpk : false, vc: router.query.type == "type3" ? prev.t3.vc : false } }));
+    setBill(prev => ({ ...prev, t3: { rpk: router.query.type == "type3" ? prev.t3.rpk : false, vc: router.query.type == "type3" ? prev.t3.vc : false, fac: router.query.type == "type3" ? prev.t3.fac : false } }));
   }, [router.query]);
 
   if (voiceData.length && head.length && Object.keys(bill).length) {
@@ -676,7 +676,7 @@ const Table = () => {
                   return <td key={j}>
                     <Input
                       value={r[o]}
-                      disabled={["sr_no", "total_amount"].includes(o)}// || (router.query.type == "type3" && (o == "freight_amount") && bill.t3.rpk)}
+                      disabled={["sr_no", "total_amount"].includes(o) || (router.query.type == "type3" && (o == "freight_amount") && bill.t3.fac)}
                       idx={i}
                       Key={o}
                       {...{ tululu }}
@@ -767,7 +767,10 @@ const Table = () => {
             Rate / KG is {bill.t3.rpk ? "Present" : "Not Present"}
             <Switch
               checked={bill.t3.rpk}
-              onChange={(checked) => setBill({ ...bill, t3: { ...bill.t3, rpk: checked } })}
+              onChange={(checked) => {
+                setBill({ ...bill, t3: { ...bill.t3, rpk: checked } });
+                if (!checked) setBill(prev => ({ ...prev, t3: { ...prev.t3, fac: false } }))
+              }}
               className={"group relative flex h-7 w-14 cursor-pointer rounded-full ml-4 -mt-1 p-1 " + (!bill.t3.rpk ? "bg-black/20" : "bg-blue-700 ")}
             >
               <span
@@ -789,7 +792,23 @@ const Table = () => {
               />
             </Switch>
           </div>
-        </>}
+        
+          {bill.t3.rpk &&
+            <div className="mx-auto w-[90%] flex">
+              Freight amount is calculated {bill.t3.fac ? "by" : "not by"} R / KG
+              <Switch
+                checked={bill.t3.fac}
+                onChange={(checked) => setBill({ ...bill, t3: { ...bill.t3, fac: checked } })}
+                className={"group relative flex h-7 w-14 cursor-pointer rounded-full ml-4 -mt-1 p-1 " + (!bill.t3.fac ? "bg-black/20" : "bg-blue-700 ")}
+              >
+                <span
+                  aria-hidden="true"
+                  className={"pointer-events-none inline-block size-5 translate-x-0 rounded-full shadow-lg ring-0 transition duration-200 ease-in-out group-data-checked:translate-x-7 " + (!bill.t3.fac ? "bg-gray-500" : "bg-white")}
+                />
+              </Switch>
+            </div>}
+        </>
+        }
 
         <h1 className="text-center text-4xl my-12">Preview Table</h1>
 
