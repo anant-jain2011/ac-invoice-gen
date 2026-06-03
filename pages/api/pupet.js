@@ -38,7 +38,7 @@ export default async function handler(req, res) {
 
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", 'attachment; filename="invoice.pdf"');
-    return res.end(pdf);
+    res.end(pdf);
 
   } catch (err) {
     console.error("PDF Generation Error:", err);

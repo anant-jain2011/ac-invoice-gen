@@ -1,25 +1,35 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
 
 export default function Home() {
-
   const router = useRouter();
+  const [invoiceCount, setInvoiceCount] = useState();
+
+  useEffect(() => {
+    fetch("/api/get-length")
+      .then((res) => res.json())
+      .then((data) => {
+        setInvoiceCount(data.count);
+      });
+  },[])
+
   const quickStats = [
     {
       title: "Invoices Created",
-      value: "1,248",
-      sub: "+12 this week",
+      value: invoiceCount?.toLocaleString("en-IN") || "Fetching...",
+      sub: "This number may vary",
     },
-    {
-      title: "Pending Payments",
-      value: "₹48,320",
-      sub: "7 unpaid invoices",
-    },
-    {
-      title: "Saved Clients",
-      value: "86",
-      sub: "Frequently used addresses",
-    },
+    // {
+    //   title: "Pending Payments",
+    //   value: "₹48,320",
+    //   sub: "7 unpaid invoices",
+    // },
+    // {
+    //   title: "Saved Clients",
+    //   value: "86",
+    //   sub: "Frequently used addresses",
+    // },
     {
       title: "Templates",
       value: "3",
@@ -41,10 +51,10 @@ export default function Home() {
       href: "/invoices",
     },
     {
-      title: "Saved Addresses",
+      title: "Saved Information",
       desc: "Manage client addresses and GST details.",
       icon: "📍",
-      href: "/addresses",
+      href: "/saved",
     },
     {
       title: "Invoice Templates",
@@ -66,26 +76,26 @@ export default function Home() {
     },
   ];
 
-  const recentInvoices = [
-    {
-      id: "INV-1024",
-      client: "ITC Limited",
-      amount: "₹12,400",
-      status: "Paid",
-    },
-    {
-      id: "INV-1025",
-      client: "ABC Logistics",
-      amount: "₹7,850",
-      status: "Pending",
-    },
-    {
-      id: "INV-1026",
-      client: "Sharma Traders",
-      amount: "₹4,320",
-      status: "Paid",
-    },
-  ];
+  // const recentInvoices = [
+  //   {
+  //     id: "INV-1024",
+  //     client: "ITC Limited",
+  //     amount: "₹12,400",
+  //     status: "Paid",
+  //   },
+  //   {
+  //     id: "INV-1025",
+  //     client: "ABC Logistics",
+  //     amount: "₹7,850",
+  //     status: "Pending",
+  //   },
+  //   {
+  //     id: "INV-1026",
+  //     client: "Sharma Traders",
+  //     amount: "₹4,320",
+  //     status: "Paid",
+  //   },
+  // ];
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-100 via-white to-slate-200 text-slate-900">
@@ -201,8 +211,8 @@ export default function Home() {
         </section>
 
         {/* Recent Invoices */}
-        <section className="mt-14 grid gap-8 lg:grid-cols-[1.5fr,1fr]">
-          <div className="rounded-[30px] border border-slate-200 bg-white p-8 shadow-sm">
+        <section className="mt-4 grid gap-8 lg:grid-cols-[1.5fr,1fr]">
+          {/* <div className="rounded-[30px] border border-slate-200 bg-white p-8 shadow-sm">
             <div className="mb-6 flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-black">Recent Invoices</h2>
@@ -258,10 +268,10 @@ export default function Home() {
                 </tbody>
               </table>
             </div>
-          </div>
+          </div> */}
 
           {/* Sidebar */}
-          <div className="space-y-8">
+          {/* <div className="space-y-8">
             <div className="rounded-[30px] border border-slate-200 bg-white p-8 shadow-sm">
               <h2 className="text-2xl font-black">Saved Clients</h2>
 
@@ -303,7 +313,7 @@ export default function Home() {
                 Export PDF
               </button>
             </div>
-          </div>
+          </div> */}
         </section>
       </section>
     </main>

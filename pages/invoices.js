@@ -6,6 +6,9 @@ export default function Invoices() {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Track separate loading state for deletion to handle button disabled states
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
     async function loadInvoices() {
@@ -25,6 +28,39 @@ export default function Invoices() {
 
     loadInvoices();
   }, []);
+
+  // --- COMPREHENSIVE DELETE HANDLER ---
+  const handleDeleteInvoice = async (e, invoiceId) => {
+    // 1. Critical: Stop Next.js router from redirecting to /table
+    e.stopPropagation();
+
+    // Confirm action with the operator
+    if (!window.confirm("Are you sure you want to permanently delete this invoice and all its consignments?")) {
+      return;
+    }
+
+    setDeletingId(invoiceId);
+
+    try {
+      // 2. Fire targeted network request matching your specific backend model identification
+      const response = await fetch(`/api/delete-invoice?id=${invoiceId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server returned error status: ${response.status}`);
+      }
+
+      // 3. Optimistic Local View State Update: Pull it instantly out of the items array
+      setInvoices((prevInvoices) => prevInvoices.filter(inv => inv._id !== invoiceId));
+      
+    } catch (err) {
+      console.error("Deletion error:", err);
+      alert(`Failed to delete invoice: ${err.message}`);
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans antialiased selection:bg-blue-500 selection:text-white">
@@ -74,7 +110,7 @@ export default function Invoices() {
                 {invoices.map((invoice) => (
                   <div 
                     key={invoice._id} 
-                    className="group bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer"
+                    className="group bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer relative"
                     onClick={() => router.push("/table?type="+invoice.type+"&id="+invoice._id)}
                   >
                     {/* Top Accent Strip */}
@@ -87,13 +123,26 @@ export default function Invoices() {
                           <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">Billing Date</span>
                           <h3 className="text-xl font-bold text-slate-800">{invoice.bill?.date || 'N/A'}</h3>
                         </div>
-                        <span className={`inline-flex items-center rounded-md px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${
-                          invoice.bill?.igst 
-                            ? 'bg-purple-50 text-purple-700 ring-purple-600/10' 
-                            : 'bg-blue-50 text-blue-700 ring-blue-600/10'
-                        }`}>
-                          {invoice.bill?.igst ? 'Integrated (IGST)' : 'Standard GST'}
-                        </span>
+                        
+                        <div className="flex items-center gap-3">
+                          <span className={`inline-flex items-center rounded-md px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${
+                            invoice.bill?.igst 
+                              ? 'bg-purple-50 text-purple-700 ring-purple-600/10' 
+                              : 'bg-blue-50 text-blue-700 ring-blue-600/10'
+                          }`}>
+                            {invoice.bill?.igst ? 'Integrated (IGST)' : 'Standard GST'}
+                          </span>
+
+                          {/* BRAND NEW ACTION BUTTON */}
+                          <button
+                            onClick={(e) => handleDeleteInvoice(e, invoice._id)}
+                            disabled={deletingId === invoice._id}
+                            className="p-1.5 px-3 rounded-lg border border-red-200 text-xs font-medium text-red-600 bg-red-50/50 hover:bg-red-600 hover:text-white hover:border-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150 shrink-0 cursor-pointer"
+                            title="Delete entire invoice profile"
+                          >
+                            {deletingId === invoice._id ? 'Processing...' : '🗑️ Delete Card'}
+                          </button>
+                        </div>
                       </div>
 
                       {/* Metadata Section */}

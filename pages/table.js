@@ -391,7 +391,7 @@ const Table = () => {
             headers: {
               "Content-Type": "application/json"
             },
-            body: JSON.stringify({ text: row[field], type: field })
+            body: JSON.stringify({ text: row[field], type: field, tType: router.query.type })
           });
         }
       });
@@ -547,7 +547,9 @@ const Table = () => {
     }
 
     fetch("/api/get-saved").then(res => res.json()).then(data => {
-      setSaves(data);
+      let temp = data;
+      temp = temp.filter(s => ["from", "destination", "sender", "receiver"].includes(s.type) && s.tType == router.query.type);
+      setSaves(temp);
     });
 
     if (id) {
@@ -714,7 +716,7 @@ const Table = () => {
                 <button
                   className="p-1 rounded-full bg-blue-500 text-white cursor-pointer"
                   onClick={function () {
-                    setVoiceData([...voiceData, template]);
+                    setVoiceData([...voiceData, voiceData.at(-1)]);
                   }}
                 >
                   <PlusCircleIcon className="text-white w-6 h-6" />
