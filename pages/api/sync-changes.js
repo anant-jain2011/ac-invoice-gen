@@ -1,80 +1,80 @@
-import express from 'express';
-import mongoose from 'mongoose';
-import InvoiceModel from '../models/Invoice.js'; // Adjust path based on environment settings
+import Oject from '@/models/Oject';
 
-const router = express.Router();
+export default async function handler(req, res) {
+    const { changes } = req.body;
 
-router.post('/api/sync-changes', async (req, res) => {
-  const { changes } = req.body;
-
-  if (!changes || !Array.isArray(changes)) {
-    return res.status(400).json({ success: false, message: "Invalid payload format. Expected changes array." });
-  }
-
-  if (changes.length === 0) {
-    return res.status(200).json({ success: true, message: "No operational delta changes to process." });
-  }
-
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
-  try {
-    for (const change of changes) {
-      const { action, _id, type, text, newText, newTType } = change;
-
-      switch (action) {
-        case 'create': {
-          // MongoDB implicitly defines the secure unique _id identifier on save
-          const newDoc = new InvoiceModel({
-            type: type, // This handles the grouping category name
-            text: text,
-            tType: change.tType || ""
-          });
-          await newDoc.save({ session });
-          break;
-        }
-
-        case 'update':
-          if (!_id) {
-            throw new Error("Missing target document parameter identifier context rule.");
-          }
-          await InvoiceModel.findByIdAndUpdate(
-            _id, 
-            { $set: { text: newText, tType: newTType || "" } },
-            { session }
-          );
-          break;
-
-        case 'delete':
-          if (!_id) {
-            break; // If a newly created element was discarded locally prior to synchronization, bypass query execution
-          }
-          await InvoiceModel.findByIdAndDelete(_id, { session });
-          break;
-
-        default:
-          console.warn(`Unrecognized change payload operation skipped: ${action}`);
-      }
+    // 1. Quick sanity check on the incoming data
+    if (!changes || !Array.isArray(changes)) {
+        return res.status(400).json({
+            success: false,
+            message: "Payload missing or malformed. Expected a 'changes' array."
+        });
     }
 
-    await session.commitTransaction();
-    session.endSession();
+    // Nothing to do? Save server resources and exit early
+    if (changes.length === 0) {
+        return res.status(200).json({ success: true, message: "No pending changes to sync." });
+    }
 
-    return res.status(200).json({
-      success: true,
-      message: "Database tracking log records updated successfully."
-    });
+    try {
+        console.log(`🎬 Starting sync for ${changes.length} database operations...`);
 
-  } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
-    
-    console.error("Database reconciliation routine error:", error);
-    return res.status(500).json({
-      success: false,
-      message: `Database synchronization transaction failed: ${error.message}`
-    });
-  }
-});
+        // 2. Loop through the squashed, unique changes sequentially
+        for (const change of changes) {
+            const { _id, action, newText, text, newTType, type } = change;
 
-export default router;
+            // Double check that we have a valid ID before touching the DB
+            if (!_id) {
+                console.warn(`⚠️ Skipped a ${action} action because it was missing a valid document _id.`);
+                continue;
+            }
+
+            switch (action) {
+                case 'create':
+                    // MongoDB implicitly defines the secure unique _id identifier on save
+                    const newDoc = new Oject({
+                        type: type, // This handles the grouping category name
+                        text: text,
+                        tType: change.tType || ""
+                    });
+                    await newDoc.save({ session });
+                    break;
+                case 'delete':
+                    console.log(`🗑️ Deleting document ID: ${_id} from category: ${type}`);
+                    // Native Mongoose method targeting the precise document primary key
+                    await Oject.findByIdAndDelete(_id);
+                    break;
+
+                case 'update':
+                    console.log(`✏️ Updating document ID: ${_id} to new text: "${newText}"`);
+                    // Target by ID and update only the text field
+                    await Oject.findByIdAndUpdate(
+                        _id,
+                        { $set: { text: newText, tType: newTType } },
+                        { runValidators: true } // Keeps data safe against schema rules
+                    );
+                    break;
+
+                default:
+                    console.warn(`❓ Unknown or unsupported action type ignored: "${action}"`);
+            }
+        }
+
+        console.log("✅ All changes synchronized cleanly.");
+
+        return res.status(200).json({
+            success: true,
+            message: `Successfully processed ${changes.length} operations.`
+        });
+
+    } catch (error) {
+        // If a database query fails, log the full error stack on the server for debugging
+        console.error("❌ Critical error during database sync:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Something went wrong on the server while updating the database.",
+            error: error.message
+        });
+    }
+};
