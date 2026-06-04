@@ -548,7 +548,7 @@ const Table = () => {
 
     fetch("/api/get-saved").then(res => res.json()).then(data => {
       let temp = data;
-      temp = temp.filter(s => ["from", "destination", "sender", "receiver"].includes(s.type) && s.tType == router.query.type);
+      temp = temp.filter(s => ["from", "destination", "sender", "receiver"].includes(s.type) && (s.tType == router.query.type || s.tType == "all"));
       setSaves(temp);
     });
 
