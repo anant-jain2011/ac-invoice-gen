@@ -410,7 +410,7 @@ const BeautifulList = () => {
                               className="bg-gray-800 text-white px-2 py-1.5 rounded-lg border border-white/10 text-sm focus:border-indigo-500 focus:outline-none w-full cursor-pointer"
                             >
                               <option value="">-- No Template Assigned --</option>
-                              {templates.filter(t => t.id !== "all").map((tmpl) => (
+                              {templates.map((tmpl) => (
                                 <option key={tmpl.id} value={tmpl.id}>{tmpl.icon} {tmpl.name}</option>
                               ))}
                             </select>
