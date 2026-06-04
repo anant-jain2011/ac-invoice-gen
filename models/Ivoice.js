@@ -8,6 +8,7 @@ const IvoiceSchema = new mongoose.Schema({
     igst: { type: Boolean, default: false },
     t3: { type: Object },
   },
+  name: { type: String, trim: true },
   type: { type: String, trim: true },
   words: { type: String, trim: true },
   voiceData: [{
