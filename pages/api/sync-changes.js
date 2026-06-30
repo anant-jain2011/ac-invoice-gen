@@ -26,7 +26,7 @@ export default async function handler(req, res) {
             // Double check that we have a valid ID before touching the DB
             if (!_id) {
                 console.warn(`⚠️ Skipped a ${action} action because it was missing a valid document _id.`);
-                continue;
+                if (action != "create") continue;
             }
 
             switch (action) {
@@ -37,7 +37,7 @@ export default async function handler(req, res) {
                         text: text,
                         tType: change.tType || ""
                     });
-                    await newDoc.save({ session });
+                    await newDoc.save();
                     break;
                 case 'delete':
                     console.log(`🗑️ Deleting document ID: ${_id} from category: ${type}`);

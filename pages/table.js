@@ -207,7 +207,7 @@ const Table = () => {
     gst: "",
     add: "",
     igst: false,
-    t3: { rpk: false, vc: false, fac: false },
+    t3: { rpk: false, vc: false, fac: false, ec: "" },
   });
   const [voiceData, setVoiceData] = useState([]);
   const resizeRef = useRef(null);
@@ -276,7 +276,7 @@ const Table = () => {
     };
   }, []);
 
-  let updateRPKVC = (rpk, vc) => {
+  let updateRPKVC = (rpk, vc, ec) => {
     if (router.query.type !== "type3") return;
 
     let hh = [...types.type3];
@@ -301,11 +301,23 @@ const Table = () => {
       );
     }
 
+    if (ec) {
+      const idx = hh.findIndex(
+        h => h.props.children === "TOTAL AMOUNT"
+      );
+
+      hh.splice(
+        idx,
+        0,
+        <th>{ec}</th>
+      );
+    }
+
     setHead(hh);
   };
 
   useEffect(() => {
-    updateRPKVC(bill.t3.rpk, bill.t3.vc);
+    updateRPKVC(bill.t3.rpk, bill.t3.vc, bill.t3.ec);
   }, [bill.t3]);
 
   useEffect(() => {
@@ -382,11 +394,11 @@ const Table = () => {
     }
 
     voiceData.forEach((row, index) => {
-      ["from", "destination", "sender", "receiver"].forEach((field) => {
+      ["from", "destination", "sender", "receiver"].forEach(async (field) => {
         let doe = [];
         if (field && row[field] && !saves.find(s => s.text == row[field] && s.type == field) && !doe.includes(row[field])) {
           doe.push(row[field]);
-          fetch("/api/save", {
+          await fetch("/api/save", {
             method: "POST",
             headers: {
               "Content-Type": "application/json"
@@ -560,11 +572,11 @@ const Table = () => {
         let temp = data.voiceData;
         delete bill2._id;
         temp = temp.map(v => {
-          delete v._id;
+          if(v.hasOwnProperty("_id")) delete v._id;
           return v;
         })
         setVoiceData(temp);
-        setBill({ ...bill2, t3: { rpk: bill2.t3?.rpk || false, vc: bill2.t3?.vc || false, fac: bill2.t3?.fac || false } });
+        setBill({ ...bill2, t3: { rpk: bill2.t3?.rpk || false, vc: bill2.t3?.vc || false, fac: bill2.t3?.fac || false, ec: bill2.t3.ec || "" } });
         setWords(data.words);
         //also set gt
         let amt = 0;
@@ -573,7 +585,7 @@ const Table = () => {
       });
     }
 
-    setBill(prev => ({ ...prev, t3: { rpk: router.query.type == "type3" ? prev.t3.rpk : false, vc: router.query.type == "type3" ? prev.t3.vc : false, fac: router.query.type == "type3" ? prev.t3.fac : false } }));
+    setBill(prev => ({ ...prev, t3: { rpk: router.query.type == "type3" ? prev.t3.rpk : false, vc: router.query.type == "type3" ? prev.t3.vc : false, fac: router.query.type == "type3" ? prev.t3.fac : false, ec: router.query.type == "type3" ? prev.t3.ec : "" } }));
   }, [router.query]);
 
   if (voiceData.length && head.length && Object.keys(bill).length) {
@@ -779,7 +791,7 @@ const Table = () => {
               />
             </Switch>
           </div>
-          <div className="mx-auto w-[90%] flex">
+          <div className="mx-auto w-[90%] flex mt-4">
             Vehicle Charges are {bill.t3.vc ? "Present" : "Not Present"}
             <Switch
               checked={bill.t3.vc}
@@ -792,7 +804,15 @@ const Table = () => {
               />
             </Switch>
           </div>
-        
+          <div className="mx-auto w-[90%] flex mt-4">
+            Extra Column is {bill.t3.ec ? "Present" : "Not Present"}
+            <input
+              value={bill.t3.ec}
+              onChange={(e) => setBill({ ...bill, t3: { ...bill.t3, ec: e.target.value } })}
+              className={"group relative flex h-7 w-14 border cursor-pointer rounded-md ml-4 -mt-1 p-1 "}
+            />
+          </div>
+
           {bill.t3.rpk &&
             <div className="mx-auto w-[90%] flex">
               Freight amount is calculated {bill.t3.fac ? "by" : "not by"} R / KG
@@ -806,7 +826,8 @@ const Table = () => {
                   className={"pointer-events-none inline-block size-5 translate-x-0 rounded-full shadow-lg ring-0 transition duration-200 ease-in-out group-data-checked:translate-x-7 " + (!bill.t3.fac ? "bg-gray-500" : "bg-white")}
                 />
               </Switch>
-            </div>}
+            </div>
+          }
         </>
         }
 

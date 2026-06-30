@@ -4,7 +4,7 @@ const Ivoice = require('@/models/Ivoice');
 export default async function handler(req, res) {
     if (req.method === 'POST') {
         await cook();
-        const { bill, voiceData, type, words, id, name } = req.body;
+        let { bill, voiceData, type, words, id, name } = req.body;
 
         if (!voiceData) {
             return res.status(400).json({ error: 'voiceData is required' });
@@ -13,7 +13,7 @@ export default async function handler(req, res) {
         if (id) {
             let iVoice = await Ivoice.findById(id);
 
-            iVoice.name = name;
+            iVoice.name = name || iVoice.name;
             iVoice.bill = bill;
             iVoice.voiceData = voiceData;
             iVoice.type = type;

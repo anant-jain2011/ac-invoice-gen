@@ -11,7 +11,16 @@ const IvoiceSchema = new mongoose.Schema({
   name: { type: String, trim: true },
   type: { type: String, trim: true },
   words: { type: String, trim: true },
-  voiceData: [{
+  voiceData: { type: Array, required: true }
+}, {
+  timestamps: true,
+  strict: false,
+});
+
+module.exports = mongoose.models.Ivoice || mongoose.model("Ivoice", IvoiceSchema);
+
+/*
+  [{
     sr_no: { type: String, trim: true },
     cn_date: { type: String, trim: true },
     cn_no: { type: String, trim: true },
@@ -31,8 +40,4 @@ const IvoiceSchema = new mongoose.Schema({
     weight: { type: String, trim: true },
     rate_per_kg: { type: String, trim: true },
   }]
-}, {
-  timestamps: true,
-});
-
-module.exports = mongoose.models.Ivoice || mongoose.model("Ivoice", IvoiceSchema);
+*/
