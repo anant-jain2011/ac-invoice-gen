@@ -29,7 +29,7 @@ export default async function handler(req, res) {
       format: "A2",
       printBackground: true,
       margin: {
-        top: "140mm",
+        top: "108mm",
         right: "10mm",
         bottom: "10mm",
         left: "10mm",
