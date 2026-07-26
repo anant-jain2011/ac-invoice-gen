@@ -128,59 +128,72 @@ function Input(props) {
 
 function InputBox({ items, selected, setSelected, com }) {
   const its = com ? items.map((a) => a.text) : items;
-
   const [query, setQuery] = useState("");
 
-  const filtereditems =
-    query === ""
-      ? its || []
-      : its?.filter((item) =>
-        item?.toLowerCase().includes(query.toLowerCase())
-      );
+  // Calculate filtered items dynamically on render
+  const filteredItems = query === ""
+    ? (its || [])
+    : its?.filter((item) =>
+      item?.toLowerCase().includes(query.toLowerCase())
+    ) || [];
+
+  const handleChange = (value) => {
+    setSelected(value);
+  };
+
+  const handleClose = () => {
+    // REQUIREMENT 2: Retain unique custom values when leaving the field.
+    // If the user typed a custom query and didn't pick an option from the list,
+    // force save that query text into the selected state instead of wiping it out.
+    if (query !== "" && !its.includes(query)) {
+      setSelected(query);
+    }
+    // Optional: Clear search tracking after saving state
+    setQuery("");
+  };
 
   return (
-    <Combobox value={selected} onChange={setSelected}>
-      <div className={"relative " + (com ? "w-full" : "w-2/3")}>
-        <ComboboxButton className="w-full">
-          <ComboboxInput
-            className="w-full rounded-lg border-gray-300 bg-white py-2 px-3 text-sm focus:outline-none"
-            autoComplete="off"
-            spellCheck={false}
-            displayValue={(item) => item || ""}
-            value={com ? selected : undefined}
-            onChange={(e) => {
-              const val = e.target.value;
+    <Combobox
+      value={selected}
+      onChange={handleChange}
+      onClose={handleClose} // ← Catches the event when focus leaves the box
+      immediate             // ← REQUIREMENT 1: Opens dropdown instantly on focus
+    >
+      <div className={clsx("relative", com ? "w-full" : "w-2/3")}>
 
-              setQuery(val);
+        <ComboboxInput
+          className="w-full rounded-lg border border-gray-300 bg-white py-2 px-3 text-sm focus:outline-none focus:border-blue-500"
+          autoComplete="off"
+          spellCheck={false}
+          // Safely print the string if selected is an object or text
+          displayValue={(item) => (typeof item === 'object' ? item?.text : item) || ""}
+          onChange={(e) => setQuery(e.target.value)}
+        />
 
-              if (com) {
-                setSelected(val);
-              }
-            }}
-          />
-        </ComboboxButton>
-
-        <ComboboxOptions className="absolute mt-1 w-full rounded-lg bg-white shadow-lg z-10 max-h-60 overflow-auto">
-          {filtereditems.map((item, id) => (
+        <ComboboxOptions className="absolute mt-1 w-full rounded-lg bg-white shadow-lg z-10 max-h-60 overflow-auto border border-gray-100"
+          modal={false} >
+          {filteredItems.map((item, id) => (
             <ComboboxOption
               key={id}
               value={item}
               className={({ active }) =>
                 clsx(
-                  "flex items-center gap-2 px-3 py-2 cursor-pointer",
-                  active ? "bg-blue-100" : ""
+                  "flex items-center gap-2 px-3 py-2 cursor-pointer text-sm select-none",
+                  active ? "bg-blue-100 text-blue-900" : "text-gray-900"
                 )
               }
             >
-              {({ selected }) => (
+              {({ selected: isSelected }) => (
                 <>
                   <CheckIcon
                     className={clsx(
-                      "w-4 h-4",
-                      selected ? "visible text-blue-600" : "invisible"
+                      "w-4 h-4 text-blue-600",
+                      isSelected ? "visible" : "invisible"
                     )}
                   />
-                  <span>{item}</span>
+                  <span className={clsx(isSelected ? "font-medium" : "font-normal")}>
+                    {item}
+                  </span>
                 </>
               )}
             </ComboboxOption>
@@ -393,21 +406,44 @@ const Table = () => {
       });
     }
 
-    voiceData.forEach((row, index) => {
-      ["from", "destination", "sender", "receiver"].forEach(async (field) => {
-        let doe = [];
-        if (field && row[field] && !saves.find(s => s.text == row[field] && s.type == field) && !doe.includes(row[field])) {
-          doe.push(row[field]);
-          await fetch("/api/save", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ text: row[field], type: field, tType: router.query.type })
+    const itemsToSave = [];
+    const localTracker = [];
+
+    for (const row of voiceData) {
+      ["from", "destination", "sender", "receiver"].forEach((field) => {
+        const value = row[field];
+
+        if (
+          value &&
+          !saves.find(s => s.text === value && s.type === field) &&
+          !localTracker.includes(`${field}-${value}`) // Unique combination tracking
+        ) {
+          localTracker.push(`${field}-${value}`);
+
+          // Push the data payload object into our collection array
+          itemsToSave.push({
+            text: value,
+            type: field,
+            tType: router.query.type
           });
         }
       });
-    });
+    }
+
+    // 2. Fire exactly ONE network request if there is anything to save
+    if (itemsToSave.length > 0) {
+      try {
+        await fetch("/api/save", { // Change to your bulk endpoint
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ items: itemsToSave })
+        });
+      } catch (error) {
+        console.error("Failed to bulk save items:", error);
+      }
+    }
 
     router.push("/table?id=" + id + "&type=" + router.query.type);
 
@@ -560,7 +596,7 @@ const Table = () => {
 
     fetch("/api/get-saved").then(res => res.json()).then(data => {
       let temp = data;
-      temp = temp.filter(s => ["from", "destination", "sender", "receiver"].includes(s.type) && (s.tType == router.query.type || s.tType == "all"));
+      temp = temp.filter(s => ["from", "destination", "sender", "receiver"].includes(s.type) && (s.tType == router.query.type || !s.tType));
       setSaves(temp);
     });
 
@@ -572,7 +608,7 @@ const Table = () => {
         let temp = data.voiceData;
         delete bill2._id;
         temp = temp.map(v => {
-          if(v.hasOwnProperty("_id")) delete v._id;
+          if (v.hasOwnProperty("_id")) delete v._id;
           return v;
         })
         setVoiceData(temp);

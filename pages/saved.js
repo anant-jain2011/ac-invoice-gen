@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { ToastContainer, toast } from 'react-toastify';
 
 const templates = [
-  { id: "all", name: "All Templates", description: "Includes all invoice types", icon: "📁" },
+  { id: "", name: "All Templates", description: "Includes all invoice types", icon: "📁" },
   { id: "type3", name: "By Rail Invoice", description: "Used for railway transport billing", icon: "🚆" },
   { id: "type2", name: "By Road Invoice", description: "Used for road logistics billing", icon: "🚚" },
   { id: "type1", name: "Special Messenger", description: "Used for urgent/special delivery", icon: "📦" },
@@ -179,30 +179,27 @@ const BeautifulList = () => {
     const originalList = items[category] || [];
     const uniqueList = [];
     const seenTexts = new Set();
+    const updatedLog = { ...changeLog };
 
-    setChangeLog((prev) => {
-      const updatedLog = { ...prev };
-
-      originalList.forEach((item, idx) => {
-        if (seenTexts.has(item.text)) {
-          if (!item._id) {
-            delete updatedLog[`create-${category}-${idx}`];
-          } else {
-            updatedLog[item._id] = {
-              _id: item._id,
-              action: "delete",
-              type: category,
-              text: item.text,
-              tType: item.tType
-            };
-          }
+    originalList.forEach((item, idx) => {
+      if (seenTexts.has(item.text)) {
+        if (!item._id) {
+          delete updatedLog[`create-${category}-${idx}`];
         } else {
-          seenTexts.add(item.text);
-          uniqueList.push(item);
+          updatedLog[item._id] = {
+            _id: item._id,
+            action: "delete",
+            type: category,
+            text: item.text,
+            tType: item.tType
+          };
         }
-      });
-      return updatedLog;
+      } else {
+        seenTexts.add(item.text);
+        uniqueList.push(item);
+      }
     });
+    setChangeLog(updatedLog);
 
     setItems({ ...items, [category]: uniqueList });
   };
@@ -272,8 +269,7 @@ const BeautifulList = () => {
     return templates.find((t) => t.id === tTypeId) || { name: "Unassigned Template", icon: "📄" };
   };
 
-  const totalPendingChanges = Object.keys(changeLog).length;
-
+  const newLocal = "➕ Add";
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-900 to-black p-10 text-white">
       {/* Top Header Controls */}
@@ -281,8 +277,8 @@ const BeautifulList = () => {
         <div>
           <h1 className="text-3xl font-bold">Your Data</h1>
           <p className="text-sm mt-1">
-            {totalPendingChanges > 0 ? (
-              <span className="text-amber-400">⚠️ {totalPendingChanges} pending operational items tracked</span>
+            {Object.keys(changeLog).length > 0 ? (
+              <span className="text-amber-400">⚠️ {Object.keys(changeLog).length} pending operational items tracked</span>
             ) : (
               <span className="text-emerald-400">🟢 All changes synchronized</span>
             )}
@@ -301,13 +297,13 @@ const BeautifulList = () => {
 
           <button
             onClick={handleSaveAllToServer}
-            disabled={totalPendingChanges === 0 || isSaving}
-            className={`font-medium text-sm px-5 py-2 rounded-xl transition shadow-lg flex items-center gap-2 ${totalPendingChanges > 0
+            disabled={Object.keys(changeLog).length === 0 || isSaving}
+            className={`font-medium text-sm px-5 py-2 rounded-xl transition shadow-lg flex items-center gap-2 ${Object.keys(changeLog).length > 0
               ? "bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-600/20 cursor-pointer"
               : "bg-gray-800 text-gray-500 border border-gray-700 cursor-not-allowed"
               }`}
           >
-            {isSaving ? "Saving..." : `💾 Sync Changes (${totalPendingChanges})`}
+            {isSaving ? "Saving..." : `💾 Sync Changes (${Object.keys(changeLog).length})`}
           </button>
         </div>
       </div>
@@ -329,13 +325,13 @@ const BeautifulList = () => {
                     onClick={() => setActiveAddCategory(activeAddCategory === category ? null : category)}
                     className="text-xs text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 px-2 py-1 rounded-md transition cursor-pointer font-medium"
                   >
-                    {activeAddCategory === category ? "Collapse" : "➕ Add"}
+                    {activeAddCategory === category ? "Collapse" : newLocal}
                   </button>
                   <button
                     onClick={() => handleDeduplicateCategory(category)}
                     className="text-xs text-gray-400 hover:text-indigo-300 bg-white/5 hover:bg-white/10 px-2 py-1 rounded-md transition cursor-pointer"
                   >
-                    Clear Dupes
+                    Clear Duplicates
                   </button>
                 </div>
               </div>
@@ -361,7 +357,6 @@ const BeautifulList = () => {
                         onChange={(e) => setNewTType(e.target.value)}
                         className="bg-gray-800/80 text-white px-2 py-1.5 rounded-lg border border-emerald-500/30 text-sm focus:border-emerald-500 focus:outline-none w-full cursor-pointer"
                       >
-                        <option value="">-- No Template Assigned --</option>
                         {templates.map((tmpl) => (
                           <option key={tmpl.id} value={tmpl.id}>{tmpl.icon} {tmpl.name}</option>
                         ))}
@@ -409,7 +404,6 @@ const BeautifulList = () => {
                               onChange={(e) => setEditTType(e.target.value)}
                               className="bg-gray-800 text-white px-2 py-1.5 rounded-lg border border-white/10 text-sm focus:border-indigo-500 focus:outline-none w-full cursor-pointer"
                             >
-                              <option value="">-- No Template Assigned --</option>
                               {templates.map((tmpl) => (
                                 <option key={tmpl.id} value={tmpl.id}>{tmpl.icon} {tmpl.name}</option>
                               ))}

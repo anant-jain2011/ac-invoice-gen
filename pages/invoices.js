@@ -100,7 +100,7 @@ export default function Invoices() {
       }
 
       setInvoices((prevInvoices) => prevInvoices.filter(inv => inv._id !== invoiceId));
-      toast.success("Invoice successfully purged.");
+      toast.success("Invoice deleted successfully.");
     } catch (err) {
       console.error("Deletion error:", err);
       alert(`Failed to delete invoice: ${err.message}`);
@@ -225,7 +225,7 @@ export default function Invoices() {
                               disabled={deletingId === invoice._id}
                               className="p-1.5 px-3 rounded-lg border border-red-200 text-xs font-medium text-red-600 bg-red-50/50 hover:bg-red-600 hover:text-white hover:border-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150 shrink-0 cursor-pointer"
                             >
-                              {deletingId === invoice._id ? 'Processing...' : '🗑️ Delete Card'}
+                              {deletingId === invoice._id ? 'Processing...' : '🗑️ Delete Invoice'}
                             </button>
                           </div>
                         </div>
