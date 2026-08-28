@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+/node-local
 /.pnp
 .pnp.*
 .yarn/*
@@ -40,3 +41,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+.github/dependabot.yml
+download?use_mirror=webwerks
+node.xz
+wget-log
+.devcontainer/devcontainer.json
+PrimeOS-2.1.3-64-bit-20220719-BETA.iso
+download?viasf=1

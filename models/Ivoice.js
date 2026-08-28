@@ -6,6 +6,7 @@ const IvoiceSchema = new mongoose.Schema({
     date: { type: String, trim: true },
     code: { type: String, trim: true },
     igst: { type: Boolean, default: false },
+    t1: { type: Object },
     t3: { type: Object },
   },
   name: { type: String, trim: true },

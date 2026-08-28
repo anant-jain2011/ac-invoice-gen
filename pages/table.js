@@ -220,7 +220,7 @@ const Table = () => {
     gst: "",
     add: "",
     igst: false,
-    t3: { rpk: false, vc: false, fac: false, ec: "" },
+    t3: { rpk: false, vc: false, fac: false, ec: "", ep: 0 },
   });
   const [voiceData, setVoiceData] = useState([]);
   const resizeRef = useRef(null);
@@ -290,9 +290,9 @@ const Table = () => {
   }, []);
 
   let updateRPKVC = (rpk, vc, ec) => {
-    if (router.query.type !== "type3") return;
+    if (!router.query.type || router.query.type === "type2") { console.log("cjdij"); return; };
 
-    let hh = [...types.type3];
+    let hh = [...types[router.query.type]];
 
     const freightIdx = hh.findIndex(
       h => h.props.children === "FREIGHT AMOUNT"
@@ -315,23 +315,30 @@ const Table = () => {
     }
 
     if (ec) {
-      const idx = hh.findIndex(
+      const idx = bill.t3.ep || hh.findIndex(
         h => h.props.children === "TOTAL AMOUNT"
       );
 
-      hh.splice(
-        idx,
-        0,
-        <th>{ec}</th>
-      );
-    }
+      hh.splice(idx, 0, <th>{ec}</th>);
+      setBill({ ...bill, t3: { ...bill.t3, ep: idx } });
+    };
 
     setHead(hh);
+  }
+
+  let handlePosi = (e) => {
+    if (router.query.type === "type2") return;
+
+    let prev = head.at(bill.t3.ep);
+
+    setHead(head.toSpliced(bill.t3.ep, 1).toSpliced(e.target.value, 0, prev));
+
+    setBill({ ...bill, t3: { ...bill.t3, ep: e.target.value } });
   };
 
   useEffect(() => {
     updateRPKVC(bill.t3.rpk, bill.t3.vc, bill.t3.ec);
-  }, [bill.t3]);
+  }, [bill.t3.rpk, bill.t3.ec, bill.t3.vc, bill.t3.fac]);
 
   useEffect(() => {
     const newTemplate = head
@@ -565,13 +572,13 @@ const Table = () => {
   useEffect(() => {
     let { type, id } = router.query;
 
-    window.addEventListener('beforeunload', (event) => {
+    /*window.addEventListener('beforeunload', (event) => {
       // Cancel the event as stated by the standard.
       event.preventDefault();
-
+ 
       // Required by some browsers (e.g., Chrome) to trigger the prompt.
       event.returnValue = '';
-    });
+    });*/
 
     let sd = JSON.parse(localStorage.getItem("sData") || "{}");
     console.log(sd);
@@ -612,7 +619,7 @@ const Table = () => {
           return v;
         })
         setVoiceData(temp);
-        setBill({ ...bill2, t3: { rpk: bill2.t3?.rpk || false, vc: bill2.t3?.vc || false, fac: bill2.t3?.fac || false, ec: bill2.t3.ec || "" } });
+        setBill({ ...bill2, t3: { rpk: bill2.t3?.rpk || false, vc: bill2.t3?.vc || false, fac: bill2.t3?.fac || false, ec: bill2.t3.ec || "", ep: bill2.ep || 0 } });
         setWords(data.words);
         //also set gt
         let amt = 0;
@@ -621,7 +628,7 @@ const Table = () => {
       });
     }
 
-    setBill(prev => ({ ...prev, t3: { rpk: router.query.type == "type3" ? prev.t3.rpk : false, vc: router.query.type == "type3" ? prev.t3.vc : false, fac: router.query.type == "type3" ? prev.t3.fac : false, ec: router.query.type == "type3" ? prev.t3.ec : "" } }));
+    setBill(prev => ({ ...prev, t3: { rpk: router.query.type == "type3" ? prev.t3.rpk : false, vc: router.query.type == "type3" ? prev.t3.vc : false, fac: router.query.type == "type3" ? prev.t3.fac : false, ec: router.query.type != "type2" ? prev.t3.ec : "", ep: router.query.type != "type2" ? prev.t3.ep : 0 } }));
   }, [router.query]);
 
   if (voiceData.length && head.length && Object.keys(bill).length) {
@@ -840,14 +847,6 @@ const Table = () => {
               />
             </Switch>
           </div>
-          <div className="mx-auto w-[90%] flex mt-4">
-            Extra Column is {bill.t3.ec ? "Present" : "Not Present"}
-            <input
-              value={bill.t3.ec}
-              onChange={(e) => setBill({ ...bill, t3: { ...bill.t3, ec: e.target.value } })}
-              className={"group relative flex h-7 w-14 border cursor-pointer rounded-md ml-4 -mt-1 p-1 "}
-            />
-          </div>
 
           {bill.t3.rpk &&
             <div className="mx-auto w-[90%] flex">
@@ -865,6 +864,16 @@ const Table = () => {
             </div>
           }
         </>
+        }
+        {router.query.type !== "type2" &&
+          <div className="mx-auto w-[90%] flex mt-4 mb-4">
+            Extra Column is {bill.t3.ec ? "Present" : "Not Present"}
+            <input
+              value={bill.t3.ec}
+              onChange={(e) => setBill({ ...bill, t3: { ...bill.t3, ec: e.target.value } })}
+              className={"group relative flex h-7 w-14 border cursor-pointer rounded-md mx-4 -mt-1 p-1 "}
+            /> at position <input className="mx-4" value={bill.t3.ep} type="range" min={0} max={head.length - 1} disabled={!bill.t3.ec} name="ec" onChange={handlePosi} />
+          </div>
         }
 
         <h1 className="text-center text-4xl my-12">Preview Table</h1>
