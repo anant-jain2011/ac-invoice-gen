@@ -1,4 +1,5 @@
-import puppeteer from "puppeteer";
+import chromium from "@sparticuz/chromium";
+import puppeteer from "puppeteer-core";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -11,9 +12,11 @@ export default async function handler(req, res) {
     const { html } = req.body;
 
     browser = await puppeteer.launch({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
+        args: chromium.args,
+        defaultViewport: chromium.defaultViewport,
+        executablePath: await chromium.executablePath(), // Extracts executable to /tmp safely
+        headless: chromium.headless || true,
+      });
 
     const page = await browser.newPage();
 
