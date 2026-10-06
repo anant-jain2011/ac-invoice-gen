@@ -1,7 +1,7 @@
 {
   "bunVersion": "1.4.x",
   "functions": {
-    "api/generate-pdf.ts": {
+    "api/pupet.ts": {
       "maxDuration": 60,
       "memory": 1024
     }
