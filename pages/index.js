@@ -104,7 +104,7 @@ export default function Home() {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div>
             <h1 className="text-2xl font-black tracking-tight">
-              AC Invoice Dashboard
+              ACM Invoice Dashboard
             </h1>
             <p className="text-sm text-slate-500">
               Smart GST invoice management system
