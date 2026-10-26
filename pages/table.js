@@ -290,7 +290,7 @@ const Table = () => {
   }, []);
 
   let updateRPKVC = (rpk, vc, ec) => {
-    if (!router.query.type || router.query.type === "type2") { console.log("cjdij"); return; };
+    if (!router.query.type || router.query.type === "type2") return;
 
     let hh = [...types[router.query.type]];
 
@@ -402,6 +402,8 @@ const Table = () => {
 
       let data = await resp.json();
       id = data.id;
+
+      router.push("/table?id=" + id + "&type=" + router.query.type);
     } else {
       console.log("Saving bill:", voiceData, head, template);
       await fetch("/api/add-voice", {
@@ -451,8 +453,6 @@ const Table = () => {
         console.error("Failed to bulk save items:", error);
       }
     }
-
-    router.push("/table?id=" + id + "&type=" + router.query.type);
 
     setLoading({ text: "", st: false });
     toast.success("Invoice saved successfully!");
@@ -548,6 +548,9 @@ const Table = () => {
       }
       newData[i].total_amount = +(newData[i].freight_amount || 0) + +(bill?.t3?.vc ? (newData[i].vehicle_charges || 0) : 0);
       newData.map(a => amt += +a.total_amount);
+      if(key == bill.t3.ec && newData[i][key].startsWith("RS.")) {
+        newData[i].total_amount += +newData[key].slice(3);
+      }
       setGt(amt);
       return newData;
     });
