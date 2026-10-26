@@ -549,7 +549,7 @@ const Table = () => {
       newData[i].total_amount = +(newData[i].freight_amount || 0) + +(bill?.t3?.vc ? (newData[i].vehicle_charges || 0) : 0);
       newData.map(a => amt += +a.total_amount);
       if(key == bill.t3.ec && newData[i][key].startsWith("RS.")) {
-        newData[i].total_amount += +newData[key].slice(3);
+        newData[i].total_amount += +newData[i][key].replace(/\D/g, "");
       }
       setGt(amt);
       return newData;
